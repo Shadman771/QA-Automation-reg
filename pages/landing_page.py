@@ -50,6 +50,14 @@ class LandingPage:
         self.search_categories = page.locator('input[placeholder="Search categories"]')
         self.check_all_label = page.locator("label", has_text="Check All")
         self.category_label = lambda name: page.get_by_text(name, exact=True)
+        # Individual category <label> elements have NO `for` attribute linking
+        # them to their checkbox <input> sibling (confirmed live), so
+        # clicking the label text is a no-op for selection - only "Check
+        # All"'s own label has working click-to-toggle behavior. To actually
+        # check/uncheck one category, target its checkbox input directly.
+        self.category_checkbox = lambda name: page.get_by_text(name, exact=True).locator(
+            "xpath=preceding-sibling::input[@type='checkbox'][1]"
+        )
         self.depth_button = lambda level: page.locator(f"text=/^{level}$/").first
         self.placeholder_text = page.get_by_text("Select Jurisdictions and Categories", exact=True)
 
