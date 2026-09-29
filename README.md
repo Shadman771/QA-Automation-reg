@@ -5,8 +5,9 @@ Playwright + Pytest regression framework, built from the real application
 **Login**, the **post-login landing page/Dashboard**, and the **World Tax
 Analyzer (WTA) module**: the **Information** workspace, all 6 **Pillar 2**
 dropdown sub-pages (Information, Compliance Calendar, Forms, Simulator,
-Country Commentary, Regulation, News) plus the top-level **News**,
-**Forms** and **Regulations** modules.
+Country Commentary, Regulation, News), the top-level **News**,
+**Forms** and **Regulations** modules, and all 5 **Treaties** dropdown
+sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data).
 
 ## Architecture
 
@@ -19,6 +20,7 @@ QA_Automation/
 ├── tests/wta_news/       WTA News (top-level) test cases
 ├── tests/wta_forms/      WTA Forms (top-level) test cases
 ├── tests/wta_regulations/  WTA Regulations (top-level) test cases
+├── tests/treaties/       Treaties menu + all 5 sub-page test cases
 ├── pages/                Page Object Model - login_page.py, landing_page.py,
 │                         wta_common.py (shared JurisdictionPanel/CategoryTree),
 │                         information_page.py, pillar2_menu.py,
@@ -27,7 +29,11 @@ QA_Automation/
 │                         pillar2_forms_page.py,
 │                         pillar2_country_commentary_page.py,
 │                         pillar2_regulation_page.py, pillar2_news_page.py,
-│                         news_page.py, forms_page.py, regulations_page.py
+│                         news_page.py, forms_page.py, regulations_page.py,
+│                         treaties_menu.py, treaties_full_dta_page.py,
+│                         treaties_pe_clauses_page.py,
+│                         treaties_other_articles_page.py,
+│                         treaties_wht_rates_page.py, treaties_mli_data_page.py
 ├── utils/                logger, screenshot (+ per-step evidence),
 │                         highlight, Excel writer, HTML report builder,
 │                         failure-log writer, cleanup, Case model

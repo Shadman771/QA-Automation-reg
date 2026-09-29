@@ -32,6 +32,8 @@ run_tests.py              - the CLI entry point (use this, not bare `pytest`, fo
 
 `tests/login/` is the one exception to session reuse: it has its own `conftest.py` that forces a fresh, unauthenticated browser context per test, because it tests the login flow itself.
 
+The **Treaties** module (`pages/treaties_menu.py` + `pages/treaties_*_page.py`, `tests/treaties/`) covers the "Treaties" top-nav dropdown's 5 sub-pages: Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data. Four of the five (Full DTA, PE Clause, Other Articles, WHT Rates) reuse `pages/wta_common.py`'s single-select `JurisdictionPanel` (heading "Select Jurisdiction", placeholder "Use the left panel to choose jurisdiction.") and render a table only after a country is selected. MLI Data is the exception — no jurisdiction panel at all; its table is server-rendered on load and sorted via a `?sort=jurisdiction:asc|desc` URL query param, toggled by clicking its sortable column headers. Watch the same rsuite-dropdown gotcha documented in `pages/pillar2_menu.py`/`pages/treaties_menu.py`: EVERY top-nav dropdown's `<li class="rs-dropdown-item">` is mounted in the DOM at once (hidden, not removed), so an unscoped `page.locator("li.rs-dropdown-item")` after opening one dropdown returns items from every dropdown — filter to `.is_visible()` (or scope tightly by exact text) rather than assuming a raw count/list reflects only the open menu.
+
 ## Project rules & conventions
 
 - **Strict Page Object Model**: every locator lives in `pages/`, never inline in a test. Locators must come from inspecting the real live DOM (a throwaway Playwright discovery script is the standard way to do this in this repo) — never guessed.
@@ -53,7 +55,7 @@ Full command reference: [ALL_COMMANDS.md](ALL_COMMANDS.md). The essentials:
 ```bash
 python run_tests.py                     # full suite (the standard way to run this project)
 python run_tests.py --feature login     # one feature only, e.g. login, dashboard, information,
-                                         # pillar2, news, forms, regulations
+                                         # pillar2, news, forms, regulations, treaties
 python run_tests.py --test LOGIN_05     # one specific Test Case ID
 python run_tests.py --smoke             # @pytest.mark.smoke only
 python run_tests.py --regression        # @pytest.mark.regression only

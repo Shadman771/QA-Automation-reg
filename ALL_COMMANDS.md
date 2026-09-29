@@ -42,7 +42,7 @@ python run_tests.py
 ```
 
 Runs every feature in `FEATURE_PATHS` (Login, Dashboard, Information,
-Pillar2, News, Forms, Regulations), cleans previous screenshots/logs/report
+Pillar2, News, Forms, Regulations, Treaties), cleans previous screenshots/logs/report
 first, regenerates the HTML report and per-feature Excel files, and prints
 the report path. Runs headed by default (`HEADLESS=false` in `.env`) and
 opens the live dashboard (`http://127.0.0.1:8787/dashboard.html`)
@@ -58,6 +58,7 @@ python run_tests.py --feature Pillar2           # Pillar 2 menu + all 6 sub-page
 python run_tests.py --feature News              # WTA News (top-level)
 python run_tests.py --feature Forms             # WTA Forms (top-level)
 python run_tests.py --feature Regulations       # WTA Regulations (top-level)
+python run_tests.py --feature Treaties          # Treaties menu + all 5 sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data)
 ```
 
 ## Run One Test Case
@@ -67,6 +68,8 @@ python run_tests.py --test LOGIN_04
 python run_tests.py --test LANDING_02
 python run_tests.py --test Information_05
 python run_tests.py --test P2Info_04
+python run_tests.py --test FullDta_02
+python run_tests.py --test MLIData_03
 ```
 
 ## Run Smoke Suite
