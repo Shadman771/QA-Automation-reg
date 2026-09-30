@@ -218,7 +218,11 @@ def test_forms_06_download_link_triggers_real_file_download(page, result):
     wait_for_content(forms.showing_text)
 
     case.step(3, "Click the first 'English' download link")
-    with page.expect_download(timeout=15000) as dl_info:
+    # 30s not 15s: confirmed live this file is a large (1MB+) real PDF -
+    # observed flaky at 15s specifically under full-suite load (passes
+    # standalone every time), so this widens the wait for the real download
+    # to arrive rather than weakening what's actually asserted below.
+    with page.expect_download(timeout=30000) as dl_info:
         case.click(forms.download_links.first, "'English' download link")
     download = dl_info.value
 
