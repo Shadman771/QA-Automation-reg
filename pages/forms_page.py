@@ -8,7 +8,13 @@ Title / Description / Applies to tax year ending on / Download / Project;
 categories narrow (filter) the same table rather than gating it. Confirmed
 live: EVERY category checkbox (and the "checkAllFormCategories" master
 checkbox) starts CHECKED by default on page load - clicking one toggles it
-OFF, not on."""
+OFF, not on.
+
+The "Download" column's "English" link is a `<span class="reg-link-button
+reg-link-button--inline">`, not an `<a>` (same pattern as Treaties > Other
+Articles) - clicking it triggers a genuine PDF file download (confirmed
+live, Australia: a `..._English_pdf.pdf` file over 1MB, `Download.failure()`
+is None)."""
 from playwright.sync_api import Page
 
 from pages.wta_common import JurisdictionPanel
@@ -26,6 +32,7 @@ class FormsPage:
         self.showing_text = page.get_by_text("Showing forms of", exact=False)
         self.table = page.locator("table")
         self.add_to_project_buttons = page.get_by_role("button", name="Add to Project")
+        self.download_links = page.get_by_text("English", exact=True)
 
     def goto(self):
         self.page.goto("https://regplus.kaz.com.bd/wta/Forms", wait_until="networkidle")

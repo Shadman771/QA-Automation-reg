@@ -5,6 +5,8 @@ Manually verified against the live application first (scripts/discover_wta.py):
   - Selecting a jurisdiction alone renders 'Commentary on <Country>, last
     updated <date>' plus an 'Export:' control and lettered/sectioned rich
     text (confirmed section: 'A. Legislative Framework')."""
+import os
+
 import pytest
 
 from pages.pillar2_country_commentary_page import CountryCommentaryPage
@@ -98,5 +100,45 @@ def test_p2cc_03_country_search_no_match_message(page, result):
 
     actual = ("Searching for a bogus country name correctly showed the 'No countries found' message." if ok
               else "The country search did not show the expected 'no match' message.")
+    result(case, actual, ok)
+    assert ok, actual
+
+
+@pytest.mark.regression
+def test_p2cc_04_export_button_downloads_real_pdf(page, result):
+    case = Case(
+        page, "P2CC_04", FEATURE, "The 'Export:' control downloads a real, non-empty commentary PDF",
+        description="With Australia selected, clicking the 'Export commentary as PDF' button must trigger a "
+                     "real download with no failure and a non-zero size - P2CC_02 only proved the 'Export:' "
+                     "label is visible, not that the export button actually produces a file.",
+        precondition="User is logged in, Australia selected on Country Commentary.",
+        test_data="Country: Australia",
+        steps="1. Log in and open Country Commentary\n2. Select Australia\n"
+              "3. Click the 'Export commentary as PDF' button\n"
+              "4. Verify a real, non-empty PDF download completed",
+    )
+    cc = _login_and_open(case, page)
+    case.step(2, "Select Australia")
+    case.click(cc.jurisdiction.country_checkbox("Australia"), "'Australia' checkbox")
+    wait_for_content(cc.commentary_on_text)
+
+    case.step(3, "Click the 'Export commentary as PDF' button")
+    with page.expect_download(timeout=15000) as dl_info:
+        case.click(cc.export_pdf_button, "'Export commentary as PDF' button")
+    download = dl_info.value
+
+    case.step(4, "Verify the PDF download")
+    filename = download.suggested_filename
+    failure = download.failure()
+    path = download.path()
+    size = os.path.getsize(path) if path else 0
+    ok = failure is None and filename.lower().endswith(".pdf") and size > 0
+    case.check("Exporting the commentary downloads a real, non-empty .pdf file with no failure", ok,
+               expected="failure=None, filename ends with .pdf, size>0",
+               actual=f"failure={failure}, filename={filename!r}, size={size}")
+
+    actual = (f"Commentary export downloaded '{filename}' ({size} bytes) successfully." if ok else
+              f"Commentary export did not produce a valid download (failure={failure}, filename={filename!r}, "
+              f"size={size}).")
     result(case, actual, ok)
     assert ok, actual

@@ -10,6 +10,8 @@ Manually verified against the live application first (scripts/discover_wta.py):
     jurisdiction ALONE - 'Showing forms of <Country>' - a table (Title /
     Description / Applies to tax year ending on / Download / Project);
     categories narrow (filter) that same table rather than gating it."""
+import os
+
 import pytest
 
 from pages.forms_page import FormsPage, FORM_CATEGORIES
@@ -194,5 +196,43 @@ def test_forms_05_forms_search_box_accepts_input(page, result):
 
     actual = (f"The Search box accepted and retained the typed value '{value}'." if ok else
               f"The Search box did not retain the typed value (got '{value}').")
+    result(case, actual, ok)
+    assert ok, actual
+
+
+@pytest.mark.regression
+def test_forms_06_download_link_triggers_real_file_download(page, result):
+    case = Case(
+        page, "Forms_06", FEATURE, "A row's 'English' download link triggers a real, non-empty file download",
+        description="With Australia selected, clicking the first row's 'English' download link must trigger a "
+                     "real download with no failure and a non-zero size - not merely be present/visible.",
+        precondition="User is logged in, Australia selected on Forms.",
+        test_data="Country: Australia",
+        steps="1. Log in and open Forms\n2. Select Australia\n"
+              "3. Click the first 'English' download link\n"
+              "4. Verify a real, non-empty file download completed",
+    )
+    forms = _login_and_open(case, page)
+    case.step(2, "Select Australia")
+    case.click(forms.jurisdiction.country_checkbox("Australia"), "'Australia' checkbox")
+    wait_for_content(forms.showing_text)
+
+    case.step(3, "Click the first 'English' download link")
+    with page.expect_download(timeout=15000) as dl_info:
+        case.click(forms.download_links.first, "'English' download link")
+    download = dl_info.value
+
+    case.step(4, "Verify the download")
+    filename = download.suggested_filename
+    failure = download.failure()
+    path = download.path()
+    size = os.path.getsize(path) if path else 0
+    ok = failure is None and size > 0
+    case.check("The 'English' download link produces a real, non-empty file with no failure", ok,
+               expected="failure=None, size>0", actual=f"failure={failure}, filename={filename!r}, size={size}")
+
+    actual = (f"The download link correctly downloaded '{filename}' ({size} bytes)." if ok else
+              f"The download link did not produce a valid download (failure={failure}, filename={filename!r}, "
+              f"size={size}).")
     result(case, actual, ok)
     assert ok, actual

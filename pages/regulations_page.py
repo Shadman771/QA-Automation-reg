@@ -3,7 +3,11 @@
 a jurisdiction alone renders "Showing regulations of <Country>" - a table
 with columns Title / Description / Entry into Force / Download / Project,
 one or more "English" download links per row, and per-row "Add to Project"
-buttons."""
+buttons.
+
+The "English" download link is a `<span class="reg-link-button
+reg-link-button--inline">` - clicking it triggers a genuine file
+download."""
 from playwright.sync_api import Page
 
 from pages.wta_common import JurisdictionPanel
@@ -19,6 +23,7 @@ class RegulationsPage:
         self.table = page.locator("table")
         self.col_entry_into_force = page.get_by_role("columnheader", name="Entry into Force")
         self.add_to_project_buttons = page.get_by_role("button", name="Add to Project")
+        self.download_links = page.get_by_text("English", exact=True)
 
     def goto(self):
         self.page.goto("https://regplus.kaz.com.bd/wta/Regulations", wait_until="networkidle")
