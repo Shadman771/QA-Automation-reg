@@ -60,11 +60,23 @@ class Case:
         self.action(f"Navigating to {label or url}", kind="navigate")
         self.page.goto(url, wait_until="networkidle")
 
-    def click(self, locator, label: str):
+    def click(self, locator, label: str, force: bool = False, native_js: bool = False):
+        """native_js: dispatches a real DOM click via `element.click()`
+        (JS), bypassing Playwright's actionability/visibility system
+        entirely - for the rare case of an element that's functionally
+        clickable (its handler fires) but CSS-clipped in a way Playwright
+        can't compute a click point for, even with force=True (confirmed
+        live: a max-height/overflow-collapsed tree node in
+        pages/tools_questionnaire_creator_page.py). Prefer force=False,
+        then force=True, before reaching for this - it skips real
+        actionability guarantees."""
         self.action(f"Clicking: {label}", kind="click")
         highlight(self.page, locator)
         self._capture_evidence("click", label)
-        locator.click()
+        if native_js:
+            locator.evaluate("el => el.click()")
+        else:
+            locator.click(force=force)
 
     def fill(self, locator, value: str, label: str, mask: bool = False):
         shown = "<masked>" if mask else value

@@ -993,6 +993,7 @@ def test_landing_33_exactly_four_region_tabs(page, result):
     landing = LandingPage(page)
     case.step(2, "Count the region tabs")
     names = ["Asia Pacific", "Americas", "Europe", "MEA"]
+    landing.region_tab("Asia Pacific").wait_for(state="visible")
     counts = {n: landing.region_tab(n).count() for n in names}
     ok = all(c == 1 for c in counts.values())
     case.check("Each of the 4 region tabs appears exactly once", ok,
@@ -1017,12 +1018,20 @@ def test_landing_34_asia_pacific_country_count(page, result):
     _login(case, page)
     landing = LandingPage(page)
     case.step(2, "Count Asia Pacific countries")
+    # The country checklist isn't cleanly scoped by a shallow parent walk
+    # from the search box (confirmed live) - instead, take every visible
+    # checkbox that sits in DOM order between the "Search countries" input
+    # and the "Search categories" input, which reliably brackets the list.
+    # Both inputs must actually be present before this bracketing works.
+    landing.search_countries.wait_for(state="visible")
+    landing.search_categories.wait_for(state="visible")
     count = page.evaluate(
         """() => {
-            const input = document.querySelector('input[placeholder="Search countries"]');
-            let container = input.parentElement.parentElement;
-            return [...container.querySelectorAll('input[type=checkbox]')]
-                .filter(el => el.offsetParent !== null).length;
+            const inputs = [...document.querySelectorAll('input')];
+            const countriesIdx = inputs.findIndex(el => el.placeholder === 'Search countries');
+            const categoriesIdx = inputs.findIndex(el => el.placeholder === 'Search categories');
+            return inputs.slice(countriesIdx + 1, categoriesIdx)
+                .filter(el => el.type === 'checkbox' && el.offsetParent !== null).length;
         }"""
     )
     case.step(3, "Verify the count")
@@ -1047,6 +1056,7 @@ def test_landing_35_exactly_five_main_nav_items(page, result):
     _login(case, page)
     landing = LandingPage(page)
     case.step(2, "Count the main nav items")
+    landing.nav_information.wait_for(state="visible")
     counts = {
         "Information": landing.nav_information.count(),
         "Pillar 2": landing.nav_pillar2.count(),
@@ -1102,6 +1112,7 @@ def test_landing_37_exactly_four_product_tabs(page, result):
     _login(case, page)
     landing = LandingPage(page)
     case.step(2, "Count the product tabs")
+    landing.tab_workspace.wait_for(state="visible")
     counts = {
         "Workspace": landing.tab_workspace.count(),
         "World Tax Analyzer": landing.tab_world_tax_analyzer.count(),
@@ -1121,17 +1132,21 @@ def test_landing_37_exactly_four_product_tabs(page, result):
 def test_landing_38_select_single_category_without_check_all(page, result):
     case = Case(
         page, "LANDING_38", FEATURE, "A single category can be checked without using 'Check All'",
-        description="Clicking 'Liability to Tax' directly must check it, while 'Check All' "
-                     "remains unchecked (it only reflects when every category is checked).",
+        description="Clicking 'Liability to Tax's checkbox directly must check it, while "
+                     "'Check All' remains unchecked (it only reflects when every category is "
+                     "checked). Note: the category LABEL text has no 'for' attribute linking it "
+                     "to its checkbox (confirmed live) - clicking the label is a no-op; only the "
+                     "checkbox input itself (or 'Check All', which has its own working handler) "
+                     "toggles selection.",
         precondition="User is logged in and on the landing page.",
         test_data="Category: Liability to Tax",
-        steps="1. Log in\n2. Click 'Liability to Tax'\n3. Verify it is checked and 'Check All' "
-              "remains unchecked",
+        steps="1. Log in\n2. Click 'Liability to Tax's checkbox\n3. Verify it is checked and "
+              "'Check All' remains unchecked",
     )
     _login(case, page)
     landing = LandingPage(page)
-    case.step(2, "Click 'Liability to Tax'")
-    case.click(landing.category_label("Liability to Tax"), "'Liability to Tax' category")
+    case.step(2, "Click 'Liability to Tax's checkbox")
+    case.click(landing.category_checkbox("Liability to Tax"), "'Liability to Tax' checkbox")
     page.wait_for_timeout(400)
     case.step(3, "Verify the individual checkbox state")
     liability_state = landing.is_category_checked("Liability to Tax")
