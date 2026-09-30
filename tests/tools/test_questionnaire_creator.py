@@ -5,9 +5,12 @@ layout notes.
 Fixture question used throughout: "Is [entity] carrying on a business?"
 (confirmed live to be a single, unique, always-present leaf node under the
 "Incorporation" topic)."""
+import time
+
 import pytest
 
 from pages.tools_menu import ToolsMenu
+from pages.tools_projects_page import ProjectsPage
 from pages.tools_questionnaire_creator_page import QuestionnaireCreatorPage
 from utils.auth import perform_login
 from utils.case import Case
@@ -15,6 +18,10 @@ from utils.case import Case
 FEATURE = "Tools QuestionnaireCreator"
 
 FIXTURE_QUESTION = "Is [entity] carrying on a business?"
+
+
+def _unique_title(tag: str) -> str:
+    return f"ToolsQA_{tag}_{int(time.time() * 1000)}"
 
 
 def _login_and_open(case, page):
@@ -270,5 +277,119 @@ def test_questionnairecreator_06_add_to_project_opens_dialog(page, result):
     actual = (f"'Add to Project' correctly opened a dialog ({before_dialogs} -> {after_dialogs})." if ok else
               f"No new dialog was detected after clicking 'Add to Project' ({before_dialogs} -> "
               f"{after_dialogs}).")
+    result(case, actual, ok)
+    assert ok, actual
+
+
+@pytest.mark.regression
+def test_questionnairecreator_07_add_to_project_saves_and_appears_in_projects(page, result):
+    target_project = _unique_title("A2P")
+    item_title = _unique_title("A2PItem")
+    case = Case(
+        page, "QuestionnaireCreator_07", FEATURE,
+        "'Add to Project' end-to-end: content saved via the dialog actually lands in the target project",
+        description=f"Closes the gap deliberately left open by QuestionnaireCreator_06 (which only checked "
+                     f"the dialog opens): inserts '{FIXTURE_QUESTION}', opens 'Add to Project', switches to "
+                     f"'To an Existing Project' (a target project created via Tools > Projects for this "
+                     f"test, '{target_project}'), fills the required 'Title' field ('{item_title}'), submits, "
+                     f"and then cross-page-verifies on the Projects page that this exact item row was really "
+                     f"saved - proving the complete business functionality, not just that a modal opens. "
+                     f"Confirmed live via network capture: submitting fires "
+                     f"'POST .../api/Project/AddToProject' with the Row/ProjectName/ProjectId payload -> 200 "
+                     f"'{{\"isSuccess\":true}}' (see pages/tools_questionnaire_creator_page.py).",
+        precondition="User is logged in.",
+        test_data=f"Target project: {target_project}; Item title: {item_title}; Question: {FIXTURE_QUESTION}",
+        steps=f"1. Log in and open Tools > Projects; create '{target_project}'\n"
+              f"2. Open Questionnaire Creator and insert '{FIXTURE_QUESTION}'\n"
+              f"3. Click 'Add to Project', switch to 'To an Existing Project', select '{target_project}', "
+              f"fill Title '{item_title}', click Add\n"
+              f"4. Verify the AddToProject network call succeeded\n"
+              f"5. Open Tools > Projects, select '{target_project}', verify the item row's Title matches\n"
+              f"6. Clean up: delete '{target_project}'; reset the editor via Start Over",
+    )
+    perform_login(case, page)
+    menu = ToolsMenu(page)
+
+    case.step(1, f"Open Tools > Projects and create target project '{target_project}'")
+    case.action("Opening Tools > Projects via the nav dropdown", kind="navigate")
+    menu.open_item("Projects")
+    projects = ProjectsPage(page)
+    case.click(projects.new_project_button, "'New Project' button")
+    page.wait_for_timeout(500)
+    case.fill(projects.modal_name_input, target_project, "'Project Name' field")
+    case.click(projects.modal_save_button, "'Save' button")
+    page.wait_for_timeout(1200)
+    target_created = projects.project_exists(target_project)
+
+    case.step(2, f"Open Questionnaire Creator and insert '{FIXTURE_QUESTION}'")
+    case.action("Opening Tools > Questionnaire Creator via the nav dropdown", kind="navigate")
+    menu.open_item("Questionnaire Creator")
+    qc = QuestionnaireCreatorPage(page)
+    case.click(qc.question_node(FIXTURE_QUESTION).first, f"'{FIXTURE_QUESTION}' tree question",
+               force=True, native_js=True)
+    page.wait_for_timeout(1000)
+
+    case.step(3, f"Add to Project -> existing project '{target_project}', Title '{item_title}'")
+    add_to_project_ok = False
+    response_body = {}
+    if target_created:
+        case.click(qc.add_to_project_button, "'Add to Project' button")
+        page.wait_for_timeout(800)
+        case.click(qc.add_to_project_existing_radio, "'To an Existing Project' option")
+        page.wait_for_timeout(500)
+        case.click(qc.add_to_project_existing_picker, "'Select Existing Project' picker")
+        page.wait_for_timeout(500)
+        option = qc.add_to_project_existing_option(target_project)
+        add_to_project_ok = option.count() > 0
+        if add_to_project_ok:
+            case.click(option.first, f"'{target_project}' option")
+            page.wait_for_timeout(400)
+            case.fill(qc.add_to_project_title_input, item_title, "'Title' field")
+            with page.expect_response(lambda r: "AddToProject" in r.url) as resp_info:
+                case.click(qc.add_to_project_submit_button, "'Add' button")
+            response_body = resp_info.value.json()
+            page.wait_for_timeout(1200)
+
+    case.step(4, "Verify the AddToProject network call succeeded")
+    api_ok = target_created and add_to_project_ok and response_body.get("isSuccess") is True
+    case.check("AddToProject API call returned isSuccess=true", api_ok,
+               expected='{"isSuccess": true}', actual=response_body)
+
+    case.step(5, f"Open Tools > Projects, select '{target_project}', verify the item row's Title")
+    item_found = False
+    if api_ok:
+        case.action("Opening Tools > Projects via the nav dropdown", kind="navigate")
+        menu.open_item("Projects")
+        projects = ProjectsPage(page)
+        title_span = projects.project_title(target_project)
+        case.click(title_span.first, f"'{target_project}' project title")
+        page.wait_for_timeout(1500)
+        table_visible = case.verify_visible(projects.table.first, "project item table")
+        if table_visible and projects.table_rows.count() > 0:
+            row_title = projects.item_table_row_title_value(0)
+            item_found = row_title == item_title
+            case.check(f"The saved item's Title cell matches '{item_title}'", item_found,
+                       expected=item_title, actual=row_title)
+
+    ok = target_created and add_to_project_ok and api_ok and item_found
+
+    case.step(6, f"Clean up: delete '{target_project}'; reset the editor via Start Over")
+    if projects.project_exists(target_project):
+        delete_link = projects.row_action(target_project, "Delete")
+        case.click(delete_link, f"'Delete' action for '{target_project}'")
+        page.wait_for_timeout(600)
+        case.click(projects.delete_confirm_button, "'Delete' confirm button")
+        page.wait_for_timeout(1000)
+    case.action("Opening Tools > Questionnaire Creator via the nav dropdown", kind="navigate")
+    menu.open_item("Questionnaire Creator")
+    qc = QuestionnaireCreatorPage(page)
+    if qc.start_over_button.is_enabled():
+        _start_over_and_confirm(case, page, qc)
+
+    actual = (f"'Add to Project' correctly saved '{item_title}' into '{target_project}', confirmed by "
+              f"cross-page verification on the Projects page's item table." if ok else
+              f"The end-to-end Add to Project flow did not complete as expected (target_created="
+              f"{target_created}, add_to_project_ok={add_to_project_ok}, api_ok={api_ok}, "
+              f"item_found={item_found}).")
     result(case, actual, ok)
     assert ok, actual
