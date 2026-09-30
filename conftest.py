@@ -215,3 +215,30 @@ def pytest_sessionfinish(session, exitstatus):
     except Exception:
         pass
     print("=" * 60)
+
+    # Best-effort publish to GitHub Pages so there's a stable public link,
+    # not just the local file path - see utils/publish.py and README.md >
+    # "Public report link". Never fails the run if publishing doesn't work
+    # (no network, stale git credentials, etc.).
+    from utils.publish import publish_report
+    public_url = publish_report(report_path)
+
+    print()
+    print("=" * 60)
+    print("              QA AUTOMATION EXECUTION COMPLETED")
+    print("=" * 60)
+    print()
+    if failed == 0 and blocked_n == 0:
+        print("[OK] Test Execution Completed Successfully")
+    else:
+        print(f"[!!] Test Execution Completed - {failed} Failed, {blocked_n} Blocked")
+    print()
+    print("Final Report:")
+    if public_url:
+        print(f"  Public: {public_url}")
+    else:
+        print("  Public: not published this run (see README.md > 'Public report link')")
+    print(f"  Local:  {report_uri}")
+    print()
+    print("Click the link above to open the report directly.")
+    print("=" * 60)

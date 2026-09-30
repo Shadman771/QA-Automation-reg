@@ -6,8 +6,11 @@ Playwright + Pytest regression framework, built from the real application
 Analyzer (WTA) module**: the **Information** workspace, all 6 **Pillar 2**
 dropdown sub-pages (Information, Compliance Calendar, Forms, Simulator,
 Country Commentary, Regulation, News), the top-level **News**,
-**Forms** and **Regulations** modules, and all 5 **Treaties** dropdown
-sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data).
+**Forms** and **Regulations** modules, all 5 **Treaties** dropdown
+sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data), and
+both **Tools** dropdown sub-pages (Projects - a project management
+workspace with create/rename/delete; Questionnaire Creator - a rich-text
+questionnaire builder with Start Over/Add to Project).
 
 ## Architecture
 
@@ -21,6 +24,7 @@ QA_Automation/
 ├── tests/wta_forms/      WTA Forms (top-level) test cases
 ├── tests/wta_regulations/  WTA Regulations (top-level) test cases
 ├── tests/treaties/       Treaties menu + all 5 sub-page test cases
+├── tests/tools/          Tools menu + Projects + Questionnaire Creator test cases
 ├── pages/                Page Object Model - login_page.py, landing_page.py,
 │                         wta_common.py (shared JurisdictionPanel/CategoryTree),
 │                         information_page.py, pillar2_menu.py,
@@ -33,7 +37,9 @@ QA_Automation/
 │                         treaties_menu.py, treaties_full_dta_page.py,
 │                         treaties_pe_clauses_page.py,
 │                         treaties_other_articles_page.py,
-│                         treaties_wht_rates_page.py, treaties_mli_data_page.py
+│                         treaties_wht_rates_page.py, treaties_mli_data_page.py,
+│                         tools_menu.py, tools_projects_page.py,
+│                         tools_questionnaire_creator_page.py
 ├── utils/                logger, screenshot (+ per-step evidence),
 │                         highlight, Excel writer, HTML report builder,
 │                         failure-log writer, cleanup, Case model
@@ -151,6 +157,26 @@ rate against `DEPLOYMENT_SUCCESS_THRESHOLD` in `.env` (default `95`,
 i.e. 95%) — change that value and the next report uses it automatically,
 no code changes needed. This is computed in `utils/report_utils.py::build_html_report`
 from `config/settings.py::DEPLOYMENT_SUCCESS_THRESHOLD`.
+
+## Public report link
+
+A local test run can't publish to the internet by itself, so every run
+also best-effort copies `reports/automation_report.html` to
+`docs/index.html` and pushes it (`utils/publish.py::publish_report`,
+called from `conftest.py`'s `pytest_sessionfinish`). Once **GitHub Pages**
+is enabled on the repo (one-time setup — GitHub → repo → Settings → Pages
+→ Source: "Deploy from a branch" → Branch: `main`, folder `/docs`), that
+push republishes the same stable URL:
+
+```text
+https://shadmanshilon.github.io/Reg-Automation/
+```
+
+The terminal prints this link (plus the local `file://` fallback) in a
+clearly marked banner at the end of every run. If publishing fails for any
+reason (no network, stale git credentials, nothing new to push), the run
+still completes normally — the banner just says so instead of showing a
+broken link. This never fails a test run; it's best-effort only.
 
 ## Adding / updating / removing a feature
 
