@@ -14,6 +14,7 @@ behavior (whitespace-only, padded, very-long names), duplicate-name
 handling, special-character/XSS-adjacent input, and reload persistence -
 see pages/tools_projects_page.py's module docstring for the confirmed-live
 API shapes and gaps these tests assert against."""
+import os
 import time
 
 import pytest
@@ -790,5 +791,55 @@ def test_projects_15_created_project_survives_a_page_reload(page, result):
               f"server-side persistence." if ok else
               f"Reload persistence did not match expectations (setup_ok={setup_ok}, url_ok={url_ok}, "
               f"still_listed={still_listed}).")
+    result(case, actual, ok)
+    assert ok, actual
+
+
+@pytest.mark.regression
+def test_projects_16_row_export_action_downloads_real_file(page, result):
+    tag = "Export"
+    title = _unique_title(tag)
+    case = Case(
+        page, "Projects_16", FEATURE, "A project row's 'Export' action downloads a real, non-empty file",
+        description=f"Each project row's hover-revealed 'Export' link (defined in the page object's "
+                     f"'row_action' helper alongside 'Edit'/'Delete', but never previously clicked by any "
+                     f"test) must trigger a real file download with no failure and a non-zero size, when "
+                     f"clicked on a freshly created project ('{title}').",
+        precondition="User is logged in and on Tools > Projects.",
+        test_data=f"Project name: {title}",
+        steps=f"1. Log in and open Tools > Projects\n2. Create a project named '{title}'\n"
+              f"3. Hover the row and click its 'Export' action\n"
+              f"4. Verify a real, non-empty file download completed\n5. Clean up: delete it",
+    )
+    projects = _login_and_open(case, page)
+    case.step(2, f"Create a project named '{title}'")
+    _create_project(case, page, projects, title)
+    setup_ok = projects.project_exists(title)
+
+    case.step(3, "Hover the row and click its 'Export' action")
+    filename, failure, size = "", "not attempted", 0
+    if setup_ok:
+        export_link = projects.row_action(title, "Export")
+        with page.expect_download(timeout=15000) as dl_info:
+            case.click(export_link, f"'Export' action for '{title}'")
+        download = dl_info.value
+        filename = download.suggested_filename
+        failure = download.failure()
+        path = download.path()
+        size = os.path.getsize(path) if path else 0
+
+    case.step(4, "Verify the download")
+    ok = setup_ok and failure is None and size > 0
+    case.check("The row's 'Export' action produces a real, non-empty file with no failure", ok,
+               expected="setup_ok=True, failure=None, size>0",
+               actual=f"setup_ok={setup_ok}, failure={failure}, filename={filename!r}, size={size}")
+
+    case.step(5, "Clean up: delete it")
+    if projects.project_exists(title):
+        _delete_project(case, page, projects, title)
+
+    actual = (f"The 'Export' action correctly downloaded '{filename}' ({size} bytes)." if ok else
+              f"The 'Export' action did not produce a valid download (setup_ok={setup_ok}, failure={failure}, "
+              f"filename={filename!r}, size={size}).")
     result(case, actual, ok)
     assert ok, actual

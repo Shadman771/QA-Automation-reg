@@ -21,7 +21,20 @@
     param changes accordingly - a completely different dataset from the
     per-jurisdiction DTA table.
   - No pagination observed (Australia's DTA list rendered ~53 rows in one
-    table)."""
+    table).
+  - Each row's "View" is a real `<button class="reg-link-button">` (was
+    previously defined as `view_links` but never clicked by any test).
+    Confirmed live: clicking it fires a real API call
+    (`GetTreatyDtaData/<CC>/<CC>`) and REPLACES the table entirely with the
+    full treaty document viewer for that jurisdiction pair - same
+    "Contents" sidebar layout as the modal opened from Treaties > Other
+    Articles' article links, but rendered inline on the page (not a modal;
+    `.rs-modal-wrapper` is NOT used here), titled "<Country> - <Partner>"
+    with its own "Export:" button (`<button class="reg-icon-button">`
+    containing `<img alt="Export as PDF">`, confirmed to download a real
+    `Treaty_<Country> - <Partner>.pdf`) and a "Compare With" control. There
+    is no visible "back to table" control - re-selecting the jurisdiction
+    (or reloading) is how a test returns to the table view."""
 from playwright.sync_api import Page
 
 from pages.wta_common import JurisdictionPanel
@@ -39,6 +52,17 @@ class FullDtaPage:
         self.table = page.locator("table")
         self.table_rows = page.locator("table tbody tr")
         self.view_links = page.get_by_text("View", exact=True)
+
+        # The full document viewer, opened inline by clicking a row's "View".
+        self.viewer_contents_heading = page.get_by_role("heading", name="Contents")
+        self.viewer_export_pdf_button = page.locator("button.reg-icon-button").filter(
+            has=page.locator("img[alt='Export as PDF']")
+        )
+        self.viewer_compare_with = page.get_by_text("Compare With", exact=True)
+
+    def view_link_in_row(self, partner_name: str):
+        row = self.table_rows.filter(has_text=partner_name)
+        return row.locator("button.reg-link-button", has_text="View")
 
     def goto(self):
         self.page.goto("https://regplus.kaz.com.bd/wta/FullDta", wait_until="networkidle")

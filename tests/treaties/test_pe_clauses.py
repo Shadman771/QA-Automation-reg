@@ -1,5 +1,7 @@
 """Treaties > PE Clause (/wta/PEClauses). See pages/treaties_pe_clauses_page.py
 for the full confirmed-live layout notes."""
+import os
+
 import pytest
 
 from pages.treaties_pe_clauses_page import PEClausesPage, PE_CLAUSES_HEADERS
@@ -156,5 +158,124 @@ def test_peclauses_05_no_countries_found_on_bad_search(page, result):
 
     actual = ("Searching for a non-existent country correctly showed the 'No countries found' message." if ok
               else "The 'No countries found' message was not shown for an unmatched search term.")
+    result(case, actual, ok)
+    assert ok, actual
+
+
+@pytest.mark.regression
+def test_peclauses_06_article_link_opens_detail_modal(page, result):
+    case = Case(
+        page, "PEClauses_06", FEATURE, "Clicking an article-reference link opens the treaty article modal",
+        description="With Australia selected, clicking the 'Art. 5(1)' link in the Austria row's 'Fixed Base' "
+                     "column must open a modal titled 'Treaty between Australia and Austria' - same "
+                     "click-to-modal pattern confirmed on Treaties > Other Articles.",
+        precondition="User is logged in, Australia selected on PE Clause.",
+        test_data="Country: Australia, partner: Austria, column: Fixed Base",
+        steps="1. Log in and open PE Clause\n2. Select Australia\n"
+              "3. Click the 'Art. 5(1)' link in the Austria row\n4. Verify the article modal title",
+    )
+    pe = _login_and_open(case, page)
+    case.step(2, "Select Australia")
+    case.click(pe.jurisdiction.country_checkbox("Australia"), "'Australia' jurisdiction")
+    wait_for_content(pe.table)
+
+    case.step(3, "Click the Austria row's Fixed Base article link")
+    link = pe.article_link_in_row("Austria", 1)
+    link_present = link.count() >= 1
+    if link_present:
+        case.click(link.first, "'Art. 5(1)' article link (Austria row)")
+        pe.article_modal_wrapper.first.wait_for(state="visible", timeout=10000)
+
+    case.step(4, "Verify the modal title")
+    title = pe.article_modal_title.first.inner_text() if link_present else ""
+    title_ok = "Treaty between Australia and Austria" in title
+    ok = link_present and title_ok
+    case.check("The article modal opens with the correct treaty title", ok,
+               expected="title contains 'Treaty between Australia and Austria'",
+               actual=f"link_present={link_present}, title={title!r}",
+               locator=pe.article_modal_title.first if link_present else None)
+
+    if link_present:
+        case.click(pe.article_modal_ok_button, "'OK' button (close modal)")
+
+    actual = (f"Clicking the Austria article link correctly opened the modal ({title!r})." if ok else
+              f"The article modal did not open/match as expected (link_present={link_present}, title={title!r}).")
+    result(case, actual, ok)
+    assert ok, actual
+
+
+@pytest.mark.regression
+def test_peclauses_07_article_modal_pdf_export_downloads(page, result):
+    case = Case(
+        page, "PEClauses_07", FEATURE, "The article modal's PDF export downloads a real, non-empty file",
+        description="With the Austria article modal open (Australia selected), clicking 'PDF' under Export must "
+                     "trigger a real file download with no failure and a non-zero size.",
+        precondition="User is logged in, Australia selected, Austria's article modal open.",
+        test_data="Country: Australia, partner: Austria",
+        steps="1. Log in, open PE Clause, select Australia\n2. Open the Austria article modal\n"
+              "3. Click 'PDF' under Export\n4. Verify a real, non-empty PDF download completed",
+    )
+    pe = _login_and_open(case, page)
+    case.click(pe.jurisdiction.country_checkbox("Australia"), "'Australia' jurisdiction")
+    wait_for_content(pe.table)
+    link = pe.article_link_in_row("Austria", 1)
+    case.click(link.first, "'Art. 5(1)' article link (Austria row)")
+    pe.article_modal_wrapper.first.wait_for(state="visible", timeout=10000)
+
+    case.step(3, "Click 'PDF' under Export")
+    with page.expect_download(timeout=15000) as dl_info:
+        case.click(pe.article_modal_export_pdf.first, "'PDF' export action")
+    download = dl_info.value
+
+    case.step(4, "Verify the PDF download")
+    filename = download.suggested_filename
+    failure = download.failure()
+    path = download.path()
+    size = os.path.getsize(path) if path else 0
+    ok = failure is None and filename.lower().endswith(".pdf") and size > 0
+    case.check("The PDF export downloads a real, non-empty .pdf file with no failure", ok,
+               expected="failure=None, filename ends with .pdf, size>0",
+               actual=f"failure={failure}, filename={filename!r}, size={size}")
+
+    case.click(pe.article_modal_ok_button, "'OK' button (close modal)")
+    actual = (f"PDF export downloaded '{filename}' ({size} bytes) successfully." if ok else
+              f"PDF export did not produce a valid download (failure={failure}, filename={filename!r}, size={size}).")
+    result(case, actual, ok)
+    assert ok, actual
+
+
+@pytest.mark.regression
+def test_peclauses_08_table_export_excel_downloads(page, result):
+    case = Case(
+        page, "PEClauses_08", FEATURE, "The table-level 'Export as Excel' button downloads the whole table",
+        description="With Australia selected (no article link clicked), clicking the table's 'Export as Excel' "
+                     "icon button must trigger a real, non-empty .xlsx download.",
+        precondition="User is logged in, Australia selected on PE Clause.",
+        test_data="Country: Australia",
+        steps="1. Log in and open PE Clause\n2. Select Australia\n"
+              "3. Click the 'Export as Excel' icon button\n4. Verify a real, non-empty .xlsx download completed",
+    )
+    pe = _login_and_open(case, page)
+    case.step(2, "Select Australia")
+    case.click(pe.jurisdiction.country_checkbox("Australia"), "'Australia' jurisdiction")
+    wait_for_content(pe.table)
+
+    case.step(3, "Click the 'Export as Excel' button")
+    with page.expect_download(timeout=15000) as dl_info:
+        case.click(pe.export_excel_button.first, "'Export as Excel' button")
+    download = dl_info.value
+
+    case.step(4, "Verify the Excel download")
+    filename = download.suggested_filename
+    failure = download.failure()
+    path = download.path()
+    size = os.path.getsize(path) if path else 0
+    ok = failure is None and filename.lower().endswith(".xlsx") and size > 0
+    case.check("Exporting the table downloads a real, non-empty .xlsx file with no failure", ok,
+               expected="failure=None, filename ends with .xlsx, size>0",
+               actual=f"failure={failure}, filename={filename!r}, size={size}")
+
+    actual = (f"Table export downloaded '{filename}' ({size} bytes) successfully." if ok else
+              f"Table export did not produce a valid download (failure={failure}, filename={filename!r}, size={size}).")
     result(case, actual, ok)
     assert ok, actual

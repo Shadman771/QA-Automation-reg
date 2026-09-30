@@ -1,5 +1,7 @@
 """Treaties > Full DTA (/wta/FullDta). See pages/treaties_full_dta_page.py
 for the full confirmed-live layout notes."""
+import os
+
 import pytest
 
 from pages.treaties_full_dta_page import FullDtaPage
@@ -201,5 +203,86 @@ def test_fulldta_06_models_dropdown_switches_to_model_convention_view(page, resu
 
     actual = ("Selecting 'OECD' from the Models dropdown switched the page to the OECD Model Tax Convention "
               "view." if ok else "Selecting 'OECD' from the Models dropdown did not switch to the expected view.")
+    result(case, actual, ok)
+    assert ok, actual
+
+
+@pytest.mark.regression
+def test_fulldta_07_view_link_opens_full_document_viewer(page, result):
+    case = Case(
+        page, "FullDta_07", FEATURE, "A row's 'View' link opens the full treaty document viewer",
+        description="With Australia selected, clicking the Austria row's 'View' link (previously defined in "
+                     "the page object but never clicked by any test) must replace the table with the full "
+                     "document viewer - a 'Contents' sidebar and the treaty pair's title.",
+        precondition="User is logged in, Australia selected on Full DTA.",
+        test_data="Country: Australia, partner: Austria",
+        steps="1. Log in and open Full DTA\n2. Select Australia\n"
+              "3. Click the Austria row's 'View' link\n"
+              "4. Verify the document viewer's 'Contents' sidebar and treaty title are shown",
+    )
+    fd = _login_and_open(case, page)
+    case.step(2, "Select Australia")
+    case.click(fd.jurisdiction.country_checkbox("Australia"), "'Australia' jurisdiction")
+    wait_for_content(fd.table)
+
+    case.step(3, "Click the Austria row's 'View' link")
+    view_link = fd.view_link_in_row("Austria")
+    link_present = view_link.count() >= 1
+    if link_present:
+        case.click(view_link.first, "'View' link (Austria row)")
+        fd.viewer_contents_heading.wait_for(state="visible", timeout=10000)
+
+    case.step(4, "Verify the document viewer")
+    contents_ok = case.verify_visible(fd.viewer_contents_heading, "'Contents' sidebar heading") if link_present else False
+    title_ok = case.verify_visible(page.get_by_text("Australia - Austria", exact=True), "'Australia - Austria' title") \
+        if link_present else False
+    ok = link_present and contents_ok and title_ok
+    case.check("The 'View' link opens the full document viewer with the correct title and Contents sidebar", ok,
+               expected="link_present=True, contents_ok=True, title_ok=True",
+               actual=f"link_present={link_present}, contents_ok={contents_ok}, title_ok={title_ok}")
+
+    actual = ("The Austria row's 'View' link correctly opened the full document viewer." if ok else
+              f"The 'View' link did not open the expected viewer (link_present={link_present}, "
+              f"contents_ok={contents_ok}, title_ok={title_ok}).")
+    result(case, actual, ok)
+    assert ok, actual
+
+
+@pytest.mark.regression
+def test_fulldta_08_viewer_export_pdf_downloads(page, result):
+    case = Case(
+        page, "FullDta_08", FEATURE, "The document viewer's Export button downloads a real, non-empty PDF",
+        description="With the Austria document viewer open (Australia selected), clicking 'Export as PDF' must "
+                     "trigger a real download with no failure and a non-zero size.",
+        precondition="User is logged in, Australia selected, Austria's document viewer open.",
+        test_data="Country: Australia, partner: Austria",
+        steps="1. Log in, open Full DTA, select Australia\n2. Open the Austria document viewer\n"
+              "3. Click the 'Export as PDF' button\n4. Verify a real, non-empty PDF download completed",
+    )
+    fd = _login_and_open(case, page)
+    case.click(fd.jurisdiction.country_checkbox("Australia"), "'Australia' jurisdiction")
+    wait_for_content(fd.table)
+    view_link = fd.view_link_in_row("Austria")
+    case.click(view_link.first, "'View' link (Austria row)")
+    fd.viewer_contents_heading.wait_for(state="visible", timeout=10000)
+
+    case.step(3, "Click the 'Export as PDF' button")
+    with page.expect_download(timeout=15000) as dl_info:
+        case.click(fd.viewer_export_pdf_button.first, "'Export as PDF' button")
+    download = dl_info.value
+
+    case.step(4, "Verify the PDF download")
+    filename = download.suggested_filename
+    failure = download.failure()
+    path = download.path()
+    size = os.path.getsize(path) if path else 0
+    ok = failure is None and filename.lower().endswith(".pdf") and size > 0
+    case.check("The document viewer's Export button downloads a real, non-empty .pdf file with no failure", ok,
+               expected="failure=None, filename ends with .pdf, size>0",
+               actual=f"failure={failure}, filename={filename!r}, size={size}")
+
+    actual = (f"The Export button downloaded '{filename}' ({size} bytes) successfully." if ok else
+              f"The Export button did not produce a valid download (failure={failure}, filename={filename!r}, "
+              f"size={size}).")
     result(case, actual, ok)
     assert ok, actual
