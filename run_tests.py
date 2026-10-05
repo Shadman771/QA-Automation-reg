@@ -33,6 +33,7 @@ FEATURE_PATHS = {
     "regulations": "tests/wta_regulations",
     "treaties": "tests/treaties",
     "tools": "tests/tools",
+    "calculator": "tests/calculator",
 }
 
 

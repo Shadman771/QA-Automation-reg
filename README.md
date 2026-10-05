@@ -7,10 +7,13 @@ Analyzer (WTA) module**: the **Information** workspace, all 6 **Pillar 2**
 dropdown sub-pages (Information, Compliance Calendar, Forms, Simulator,
 Country Commentary, Regulation, News), the top-level **News**,
 **Forms** and **Regulations** modules, all 5 **Treaties** dropdown
-sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data), and
+sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data),
 both **Tools** dropdown sub-pages (Projects - a project management
 workspace with create/rename/delete; Questionnaire Creator - a rich-text
-questionnaire builder with Start Over/Add to Project).
+questionnaire builder with Start Over/Add to Project), and the
+**Calculators** dropdown's **Corporate Rate Finder** sub-page (multi-select
+jurisdiction/year rate comparison, Excel/print export, rate-details modal -
+the other 5 Calculator sub-pages are scoped for future rounds).
 
 ## Architecture
 
@@ -25,6 +28,7 @@ QA_Automation/
 ├── tests/wta_regulations/  WTA Regulations (top-level) test cases
 ├── tests/treaties/       Treaties menu + all 5 sub-page test cases
 ├── tests/tools/          Tools menu + Projects + Questionnaire Creator test cases
+├── tests/calculator/     Calculators menu + Corporate Rate Finder test cases
 ├── pages/                Page Object Model - login_page.py, landing_page.py,
 │                         wta_common.py (shared JurisdictionPanel/CategoryTree),
 │                         information_page.py, pillar2_menu.py,
@@ -39,7 +43,8 @@ QA_Automation/
 │                         treaties_other_articles_page.py,
 │                         treaties_wht_rates_page.py, treaties_mli_data_page.py,
 │                         tools_menu.py, tools_projects_page.py,
-│                         tools_questionnaire_creator_page.py
+│                         tools_questionnaire_creator_page.py,
+│                         calculator_menu.py, calculator_rate_finder_page.py
 ├── utils/                logger, screenshot (+ per-step evidence),
 │                         highlight, Excel writer, HTML report builder,
 │                         failure-log writer, cleanup, Case model

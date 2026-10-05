@@ -60,6 +60,7 @@ python run_tests.py --feature Forms             # WTA Forms (top-level)
 python run_tests.py --feature Regulations       # WTA Regulations (top-level)
 python run_tests.py --feature Treaties          # Treaties menu + all 5 sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data)
 python run_tests.py --feature Tools             # Tools menu + Projects + Questionnaire Creator
+python run_tests.py --feature Calculator        # Calculators menu + Corporate Rate Finder
 ```
 
 ## Run One Test Case
