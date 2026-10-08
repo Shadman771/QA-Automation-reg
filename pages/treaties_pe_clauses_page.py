@@ -22,6 +22,7 @@
     own "Export as Excel" icon button downloads the whole table."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 PE_CLAUSES_HEADERS = ["Jurisdiction", "Fixed Base", "Construction Assembly", "Dependent Agent", "Services", "Exempt PE"]
@@ -45,7 +46,7 @@ class PEClausesPage:
         self.article_modal_ok_button = page.get_by_role("button", name="OK")
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/PEClauses", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/PEClauses", wait_until="networkidle")
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

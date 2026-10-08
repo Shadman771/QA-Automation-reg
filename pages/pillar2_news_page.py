@@ -9,6 +9,7 @@ modal ("Start over action will reset all of your selection(s). Do you want
 to proceed?") with "No"/"Yes" buttons; only "Yes" performs the reset."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 
@@ -28,4 +29,4 @@ class PillarTwoNewsPage:
         self.confirm_no_button = page.get_by_role("button", name="No", exact=True)
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/PillarTwoNews", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoNews", wait_until="networkidle")

@@ -5,6 +5,7 @@ Description / Applies to tax year ending on / Download / Project, an
 "English" download link per row, and a per-row "Add to Project" button."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 
@@ -23,4 +24,4 @@ class PillarTwoFormsPage:
         self.download_links = page.get_by_text("English", exact=True)
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/PillarTwoForms", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoForms", wait_until="networkidle")

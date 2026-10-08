@@ -17,6 +17,8 @@ link/button in that cell. No pagination observed (all 107 rows render at
 once)."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
+
 MLI_DATA_HEADERS = [
     "Jurisdiction", "Signature",
     "Deposit of Instrument of Ratification, Acceptance or Approval",
@@ -35,7 +37,7 @@ class MLIDataPage:
         self.jurisdiction_header = page.locator("th").filter(has_text="Jurisdiction")
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/MLIData?sort=jurisdiction%3Aasc", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/MLIData?sort=jurisdiction%3Aasc", wait_until="networkidle")
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

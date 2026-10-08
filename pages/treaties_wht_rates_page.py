@@ -21,6 +21,7 @@ close). The table's own "Export as Excel" icon button downloads the whole
 table."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 WHT_RATES_HEADERS = [
@@ -47,7 +48,7 @@ class WHTRatesPage:
         self.article_modal_ok_button = page.get_by_role("button", name="OK")
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/WHTRates", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/WHTRates", wait_until="networkidle")
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

@@ -11,6 +11,7 @@ Treaties > Other Articles) - clicking it triggers a genuine file
 download."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 
@@ -27,4 +28,4 @@ class PillarTwoRegulationPage:
         self.download_links = page.get_by_text("English", exact=True)
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/PillarTwoRegulation", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoRegulation", wait_until="networkidle")

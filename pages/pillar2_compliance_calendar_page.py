@@ -6,6 +6,7 @@ GIR Filing Deadline, Notification Deadline, Registration Deadline,
 Top-Up Tax Payment Deadline, Top-Up Tax Return Filing Deadline."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 DEADLINE_TYPES = [
@@ -25,4 +26,4 @@ class ComplianceCalendarPage:
         self.table_header_due_date = page.get_by_role("columnheader", name="Due Date")
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/ComplianceCalendar", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/ComplianceCalendar", wait_until="networkidle")

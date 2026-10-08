@@ -167,14 +167,18 @@ from `config/settings.py::DEPLOYMENT_SUCCESS_THRESHOLD`.
 
 A local test run can't publish to the internet by itself, so every run
 also best-effort copies `reports/automation_report.html` to
-`docs/index.html` and pushes it (`utils/publish.py::publish_report`,
-called from `conftest.py`'s `pytest_sessionfinish`). Once **GitHub Pages**
-is enabled on the repo (one-time setup — GitHub → repo → Settings → Pages
-→ Source: "Deploy from a branch" → Branch: `main`, folder `/docs`), that
-push republishes the same stable URL:
+`docs/index.html` and pushes it to the `newrepo` remote's `main` branch
+(`utils/publish.py::publish_report`, called from `conftest.py`'s
+`pytest_sessionfinish`) — the original `origin` remote
+(shadmanshilon/Reg-Automation) has a persistent, unresolved push
+permission issue, so publishing targets a second, working remote
+(Shadman771/QA-Automation-reg) instead. Once **GitHub Pages** is enabled
+on that repo (one-time setup — GitHub → repo → Settings → Pages → Source:
+"Deploy from a branch" → Branch: `main`, folder `/docs`), that push
+republishes the same stable URL:
 
 ```text
-https://shadmanshilon.github.io/Reg-Automation/
+https://shadman771.github.io/QA-Automation-reg/
 ```
 
 The terminal prints this link (plus the local `file://` fallback) in a

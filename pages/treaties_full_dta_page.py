@@ -37,6 +37,7 @@
     (or reloading) is how a test returns to the table view."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 
@@ -65,7 +66,7 @@ class FullDtaPage:
         return row.locator("button.reg-link-button", has_text="View")
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/FullDta", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/FullDta", wait_until="networkidle")
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

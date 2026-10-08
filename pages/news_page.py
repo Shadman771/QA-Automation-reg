@@ -8,6 +8,7 @@ renders "News of <Country> between <date range>" with real news articles
 and "Start Over" controls."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 
@@ -24,7 +25,7 @@ class NewsPage:
         self.add_to_project_buttons = page.get_by_role("button", name="Add to Project")
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/News", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/News", wait_until="networkidle")
 
     def is_loaded(self) -> bool:
         return "/wta/News" in self.page.url

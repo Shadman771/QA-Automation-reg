@@ -17,6 +17,7 @@ live, Australia: a `..._English_pdf.pdf` file over 1MB, `Download.failure()`
 is None)."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 FORM_CATEGORIES = ["CIT Returns", "WHT deduction/Treaty form", "Administrative", "Other Forms", "Pillar Two"]
@@ -35,7 +36,7 @@ class FormsPage:
         self.download_links = page.get_by_text("English", exact=True)
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/Forms", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/Forms", wait_until="networkidle")
 
     def category_checkbox(self, label: str):
         return self.page.locator(

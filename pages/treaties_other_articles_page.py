@@ -46,6 +46,7 @@ identical structure each time):
 """
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 OTHER_ARTICLES_HEADERS = ["Jurisdiction", "Tie Breaker Corporate", "Capital Gain", "Other Income", "Exchange of Information"]
@@ -81,7 +82,7 @@ class OtherArticlesPage:
         self.full_dta_contents_list_items = page.locator(".rs-modal-content li")
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/OtherArticles", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/OtherArticles", wait_until="networkidle")
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

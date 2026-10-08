@@ -18,7 +18,14 @@ from typing import Optional
 from config.settings import PROJECT_ROOT
 
 DOCS_DIR = PROJECT_ROOT / "docs"
-PAGES_URL = "https://shadmanshilon.github.io/Reg-Automation/"
+# Pushes to the "newrepo" remote (Shadman771/QA-Automation-reg), not a bare
+# `git push` to the tracked upstream: the original upstream ("origin",
+# shadmanshilon/Reg-Automation) has a persistent, unresolved credential
+# issue (permission denied on every push attempt this project has made) -
+# "newrepo" is a second remote that was confirmed live to accept pushes.
+PUBLISH_REMOTE = "newrepo"
+PUBLISH_BRANCH = "main"
+PAGES_URL = "https://shadman771.github.io/QA-Automation-reg/"
 
 
 def publish_report(report_path: Path) -> Optional[str]:
@@ -36,8 +43,12 @@ def publish_report(report_path: Path) -> Optional[str]:
             ["git", "commit", "-m", "chore: publish latest QA report to GitHub Pages"],
             cwd=PROJECT_ROOT, capture_output=True, timeout=15, text=True,
         )  # non-zero exit here just means "nothing changed" - not an error
+        current_branch = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=PROJECT_ROOT, capture_output=True, timeout=10, text=True, check=True,
+        ).stdout.strip()
         push = subprocess.run(
-            ["git", "push"],
+            ["git", "push", PUBLISH_REMOTE, f"{current_branch}:{PUBLISH_BRANCH}"],
             cwd=PROJECT_ROOT, capture_output=True, timeout=30, text=True,
         )
         if push.returncode != 0:

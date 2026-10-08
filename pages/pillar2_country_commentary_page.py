@@ -11,6 +11,7 @@ download (confirmed: `<CC>_<Country>_Commentary.pdf`, non-empty,
 tested."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel
 
 
@@ -25,4 +26,4 @@ class CountryCommentaryPage:
         self.export_pdf_button = page.get_by_role("button", name="Export commentary as PDF")
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/CountryCommentary", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/CountryCommentary", wait_until="networkidle")

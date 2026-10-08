@@ -9,6 +9,7 @@ and an expandable category tree e.g. "Liability to Tax" -> "Residence" ->
 category are chosen."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel, CategoryTree
 
 
@@ -23,7 +24,7 @@ class InformationPage:
         self.depth_button = lambda n: page.get_by_role("button", name=str(n), exact=True)
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/Information", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/Information", wait_until="networkidle")
 
     def is_loaded(self) -> bool:
         return "/wta/Information" in self.page.url and self.heading.is_visible()

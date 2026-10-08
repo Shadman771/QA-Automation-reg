@@ -9,6 +9,7 @@ Selecting a jurisdiction AND a category renders a "Showing information of
 Information page, but without a nested tree (flat categories only)."""
 from playwright.sync_api import Page
 
+from config.settings import APP_ORIGIN
 from pages.wta_common import JurisdictionPanel, CategoryTree
 
 GMT_CATEGORIES = [
@@ -28,4 +29,4 @@ class PillarTwoInformationPage:
         self.showing_heading = lambda country: page.get_by_text(f"Showing information of", exact=False)
 
     def goto(self):
-        self.page.goto("https://regplus.kaz.com.bd/wta/PillarTwoInformation", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoInformation", wait_until="networkidle")
