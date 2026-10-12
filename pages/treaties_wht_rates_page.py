@@ -48,7 +48,7 @@ class WHTRatesPage:
         self.article_modal_ok_button = page.get_by_role("button", name="OK")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/WHTRates", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/WHTRates", wait_until="domcontentloaded")
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

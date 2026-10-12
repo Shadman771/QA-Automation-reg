@@ -25,7 +25,20 @@ LOGIN_PASSWORD = os.getenv("LOGIN_PASSWORD", "").strip()
 HEADLESS = os.getenv("HEADLESS", "false").strip().lower() == "true"
 BROWSER = os.getenv("BROWSER", "chromium").strip()
 TIMEOUT = int(os.getenv("TIMEOUT", "30000"))
-DEPLOYMENT_SUCCESS_THRESHOLD = float(os.getenv("DEPLOYMENT_SUCCESS_THRESHOLD", "95"))
+
+# Centralized Playwright timeouts (applied in conftest.py's `page` fixture
+# to EVERY action/locator and navigation project-wide via
+# page.set_default_timeout()/set_default_navigation_timeout() - confirmed
+# live this was previously dead config: TIMEOUT above was read but never
+# actually applied anywhere, so every call silently used Playwright's
+# built-in 30s default instead of anything in .env).
+DEFAULT_TIMEOUT_MS = int(os.getenv("DEFAULT_TIMEOUT_MS", "15000"))
+NAVIGATION_TIMEOUT_MS = int(os.getenv("NAVIGATION_TIMEOUT_MS", "30000"))
+ASSERTION_TIMEOUT_MS = int(os.getenv("ASSERTION_TIMEOUT_MS", "15000"))
+
+DEPLOYMENT_SUCCESS_THRESHOLD = float(
+    os.getenv("DEPLOYMENT_SUCCESS_THRESHOLD", os.getenv("SUCCESS_THRESHOLD", "95"))
+)
 
 SCREENSHOTS_DIR = PROJECT_ROOT / "screenshots"
 LOGS_DIR = PROJECT_ROOT / "logs"

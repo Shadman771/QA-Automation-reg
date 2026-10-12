@@ -52,7 +52,7 @@ class LoginPage:
         )
 
     def goto(self):
-        self.page.goto(BASE_URL, wait_until="networkidle")
+        self.page.goto(BASE_URL, wait_until="domcontentloaded")
 
     def is_loaded(self) -> bool:
         return (self.heading.is_visible() and self.email.is_visible()

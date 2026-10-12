@@ -27,6 +27,30 @@ AUTH_STATE_PATH = AUTH_DIR / "state.json"
 AUTHENTICATED_HOME = BASE_URL.split("/auth/")[0] + "/wta/Information"
 
 
+def wait_for_login_sync(page, timeout_ms: int = 30000) -> bool:
+    """Waits out the app's own post-login provisioning screen ("Syncing
+    with Enterprise Cloud...", "Hold on, getting things ready for you...")
+    instead of assuming a fixed short wait is enough. Confirmed live this
+    can take ~11s on the Live environment - a fixed 1s wait (the previous
+    implementation) reliably mis-detected a real, successful login as
+    failed because the app was still mid-provisioning, not actually stuck
+    on /auth/login. Polls for either a stable authenticated state (no
+    longer /auth/login AND the sync banner is gone) or timeout. Returns
+    True if authenticated-looking, False if still on /auth/login at
+    timeout (a genuine failure, not a slow one)."""
+    import time
+    deadline = time.time() + timeout_ms / 1000
+    while time.time() < deadline:
+        try:
+            syncing = page.get_by_text("Syncing with Enterprise Cloud", exact=False).count() > 0
+        except Exception:
+            syncing = False
+        if not syncing and "/auth/login" not in page.url:
+            return True
+        page.wait_for_timeout(500)
+    return "/auth/login" not in page.url
+
+
 def _state_is_valid(browser) -> bool:
     if not AUTH_STATE_PATH.exists():
         return False
@@ -34,8 +58,12 @@ def _state_is_valid(browser) -> bool:
     try:
         context = browser.new_context(storage_state=str(AUTH_STATE_PATH))
         page = context.new_page()
-        page.goto(AUTHENTICATED_HOME, wait_until="networkidle", timeout=20000)
-        return "/auth/login" not in page.url
+        # "domcontentloaded", not "networkidle" - see utils/auth.py's
+        # perform_login() for why: this app's authenticated pages keep
+        # persistent background requests going that can prevent true
+        # network-idle from ever being reached.
+        page.goto(AUTHENTICATED_HOME, wait_until="domcontentloaded", timeout=20000)
+        return wait_for_login_sync(page, timeout_ms=15000)
     except Exception:
         return False
     finally:
@@ -52,12 +80,12 @@ def _login_and_cache(browser) -> None:
         page.locator("#email").fill(LOGIN_EMAIL)
         page.locator("#password").fill(LOGIN_PASSWORD)
         page.locator('button[type="submit"]').click()
-        page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(1000)
-        if "/auth/login" in page.url:
+        authenticated = wait_for_login_sync(page)
+        if not authenticated:
             raise RuntimeError(
-                "Session-cache login failed: still on /auth/login after "
-                "submitting valid credentials. Check .env / the live app."
+                f"Session-cache login failed: still on {page.url} after submitting "
+                f".env credentials and waiting out the post-login sync screen. "
+                f"Check .env / the live app."
             )
         context.storage_state(path=str(AUTH_STATE_PATH))
     finally:

@@ -25,7 +25,7 @@ class NewsPage:
         self.add_to_project_buttons = page.get_by_role("button", name="Add to Project")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/News", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/News", wait_until="domcontentloaded")
 
     def is_loaded(self) -> bool:
         return "/wta/News" in self.page.url

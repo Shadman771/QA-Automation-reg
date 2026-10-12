@@ -63,5 +63,5 @@ class ToolsMenu:
         self.open()
         self.page.wait_for_timeout(400)
         self.item(name).click()
-        self.page.wait_for_load_state("networkidle")
+        self.page.wait_for_load_state("domcontentloaded")
         self.page.wait_for_timeout(600)

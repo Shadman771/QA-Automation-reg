@@ -29,4 +29,4 @@ class PillarTwoNewsPage:
         self.confirm_no_button = page.get_by_role("button", name="No", exact=True)
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoNews", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoNews", wait_until="domcontentloaded")

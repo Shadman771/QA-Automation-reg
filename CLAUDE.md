@@ -10,6 +10,8 @@ Goal: comprehensive, evidence-rich, visually-observable regression coverage of t
 
 This is the **single, permanent workspace** for this project. Do not create a second project/folder for a new feature or run — inspect and extend the files already here.
 
+**Read [AGENT.md](AGENT.md) before starting work.** It's the full handbook (application behavior, architecture, execution rules, troubleshooting, maintenance) kept portable across machines/sessions. This file (`CLAUDE.md`) stays the fast per-module reference; `AGENT.md` has the cross-cutting rules and the "why" behind them. Keep both current when either changes — don't let them contradict each other.
+
 ## Architecture (as it actually exists — read before assuming a generic layout)
 
 ```

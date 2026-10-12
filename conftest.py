@@ -10,7 +10,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.settings import (  # noqa: E402
     HEADLESS, BROWSER, BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD, REPORTS_DIR,
-    DEPLOYMENT_SUCCESS_THRESHOLD,
+    DEPLOYMENT_SUCCESS_THRESHOLD, DEFAULT_TIMEOUT_MS, NAVIGATION_TIMEOUT_MS,
 )
 from utils.screenshot import capture, finalize_evidence  # noqa: E402
 from utils.failure_log import write_failure_log  # noqa: E402
@@ -18,6 +18,7 @@ from utils.excel_utils import write_feature_excel  # noqa: E402
 from utils.report_utils import build_html_report  # noqa: E402
 from utils import dashboard  # noqa: E402
 from utils.session import ensure_session_cached  # noqa: E402
+from utils.auth import AuthenticationError  # noqa: E402
 
 SESSION_RESULTS = []
 SESSION_START = None
@@ -53,6 +54,8 @@ def page(browser, browser_context_args, _auth_state_path):
     tests exercise the login flow itself."""
     context = browser.new_context(storage_state=str(_auth_state_path), **browser_context_args)
     pg = context.new_page()
+    pg.set_default_timeout(DEFAULT_TIMEOUT_MS)
+    pg.set_default_navigation_timeout(NAVIGATION_TIMEOUT_MS)
     yield pg
     context.close()
 
@@ -124,6 +127,54 @@ def blocked(page):
         dashboard.finish_case("BLOCKED")
         return entry
     return _record
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Converts a perform_login() failure (AuthenticationError, see
+    utils/auth.py) into a BLOCKED entry in our own HTML report - centralized
+    here so no individual test file needs a try/except around
+    perform_login(). pytest's own terminal line for that test still reads
+    FAILED (this hook does not change pytest's native outcome, only enriches
+    our custom report with the correct classification); SESSION_RESULTS is
+    what the HTML report/Excel/dashboard actually read from."""
+    outcome = yield
+    report = outcome.get_result()
+    if report.when != "call" or call.excinfo is None:
+        return
+    exc = call.excinfo.value
+    if not isinstance(exc, AuthenticationError):
+        return
+    case = exc.case
+    page = item.funcargs.get("page")
+    screenshot_path = None
+    evidence = []
+    if page is not None:
+        try:
+            screenshot_path = capture(page, case.feature, case.id, False)
+        except Exception:
+            pass
+    try:
+        evidence = finalize_evidence(case.evidence, case.feature, case.id, False)
+    except Exception:
+        pass
+    entry = {
+        "id": case.id,
+        "feature": case.feature,
+        "title": case.title,
+        "description": case.description,
+        "precondition": case.precondition,
+        "test_data": case.test_data,
+        "steps": case.steps,
+        "expected": case.description,
+        "actual": f"BLOCKED - {exc.reason}",
+        "assertions": case.assertions,
+        "result": "BLOCKED",
+        "screenshot": str(screenshot_path.relative_to(PROJECT_ROOT)).replace("\\", "/") if screenshot_path else "",
+        "evidence": evidence,
+    }
+    SESSION_RESULTS.append(entry)
+    dashboard.finish_case("BLOCKED")
 
 
 def pytest_sessionstart(session):

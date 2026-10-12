@@ -66,7 +66,7 @@ class FullDtaPage:
         return row.locator("button.reg-link-button", has_text="View")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/FullDta", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/FullDta", wait_until="domcontentloaded")
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

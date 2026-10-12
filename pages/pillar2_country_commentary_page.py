@@ -26,4 +26,4 @@ class CountryCommentaryPage:
         self.export_pdf_button = page.get_by_role("button", name="Export commentary as PDF")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/CountryCommentary", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/CountryCommentary", wait_until="domcontentloaded")

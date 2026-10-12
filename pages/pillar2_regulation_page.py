@@ -28,4 +28,4 @@ class PillarTwoRegulationPage:
         self.download_links = page.get_by_text("English", exact=True)
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoRegulation", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoRegulation", wait_until="domcontentloaded")

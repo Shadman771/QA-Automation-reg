@@ -10,7 +10,7 @@ import re
 from utils.logger import get_logger, step as log_step, action as log_action, assertion as log_assertion
 from utils.highlight import highlight
 from utils import dashboard
-from config.settings import SCREENSHOTS_DIR
+from config.settings import SCREENSHOTS_DIR, ASSERTION_TIMEOUT_MS
 
 
 class Case:
@@ -87,14 +87,31 @@ class Case:
 
     def verify_visible(self, locator, label: str) -> bool:
         """Highlights `locator` in red while checking visibility, so the
-        element being verified is visible on screen as it's checked."""
+        element being verified is visible on screen as it's checked.
+
+        Actually WAITS (up to ASSERTION_TIMEOUT_MS) for the element to
+        become visible rather than an instant check - `Locator.is_visible()`
+        alone does NOT auto-wait/retry the way `.click()`/`expect()` do, it
+        just reports the current DOM state immediately. That was masked for
+        a long time by page-level `wait_until="networkidle"` navigation
+        effectively pre-waiting for the SPA to finish rendering before any
+        test logic ran; switching page objects to `domcontentloaded` (a
+        separate, confirmed-live fix for pages whose persistent background
+        requests never let networkidle resolve) exposed this - initial-load
+        assertions started firing before the React app had rendered.
+        Waiting here, at the assertion itself, is the correct fix rather
+        than re-adding a blocking page-level wait."""
         self.action(f"Checking visibility: {label}", kind="verify")
+        try:
+            locator.first.wait_for(state="visible", timeout=ASSERTION_TIMEOUT_MS)
+        except Exception:
+            return False
         try:
             highlight(self.page, locator, hold_ms=220)
             self._capture_evidence("verify", label)
-            return locator.is_visible()
         except Exception:
-            return False
+            pass
+        return True
 
     def check(self, text: str, passed: bool, expected="", actual="", locator=None) -> bool:
         if locator is not None:

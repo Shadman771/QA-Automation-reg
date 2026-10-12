@@ -82,7 +82,7 @@ class OtherArticlesPage:
         self.full_dta_contents_list_items = page.locator(".rs-modal-content li")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/OtherArticles", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/OtherArticles", wait_until="domcontentloaded")
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

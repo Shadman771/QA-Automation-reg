@@ -26,4 +26,4 @@ class ComplianceCalendarPage:
         self.table_header_due_date = page.get_by_role("columnheader", name="Due Date")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/ComplianceCalendar", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/ComplianceCalendar", wait_until="domcontentloaded")

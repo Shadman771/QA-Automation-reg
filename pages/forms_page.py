@@ -36,7 +36,7 @@ class FormsPage:
         self.download_links = page.get_by_text("English", exact=True)
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/Forms", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/Forms", wait_until="domcontentloaded")
 
     def category_checkbox(self, label: str):
         return self.page.locator(

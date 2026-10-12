@@ -24,7 +24,7 @@ class InformationPage:
         self.depth_button = lambda n: page.get_by_role("button", name=str(n), exact=True)
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/Information", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/Information", wait_until="domcontentloaded")
 
     def is_loaded(self) -> bool:
         return "/wta/Information" in self.page.url and self.heading.is_visible()

@@ -29,4 +29,4 @@ class PillarTwoInformationPage:
         self.showing_heading = lambda country: page.get_by_text(f"Showing information of", exact=False)
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoInformation", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoInformation", wait_until="domcontentloaded")

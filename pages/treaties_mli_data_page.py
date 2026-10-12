@@ -37,7 +37,7 @@ class MLIDataPage:
         self.jurisdiction_header = page.locator("th").filter(has_text="Jurisdiction")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/MLIData?sort=jurisdiction%3Aasc", wait_until="networkidle")
+        self.page.goto(f"{APP_ORIGIN}/wta/MLIData?sort=jurisdiction%3Aasc", wait_until="domcontentloaded")
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()
