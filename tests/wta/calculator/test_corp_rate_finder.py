@@ -31,8 +31,9 @@ FEATURE = "WTA Calculator - Corporate Rate Finder"
 def _login_and_open(case, page):
     perform_login(case, page)
     case.action("Opening Calculators > Corporate Rate Finder", kind="navigate")
-    CalculatorMenu(page).open_item("Corporate Rate Finder")
-    return CorporateRateFinderPage(page)
+    crf = CorporateRateFinderPage(page)
+    CalculatorMenu(page).open_item("Corporate Rate Finder", ready_locator=crf.instructions_heading)
+    return crf
 
 
 @pytest.mark.smoke

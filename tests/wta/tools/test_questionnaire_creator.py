@@ -27,9 +27,10 @@ def _unique_title(tag: str) -> str:
 def _login_and_open(case, page):
     perform_login(case, page)
     menu = ToolsMenu(page)
+    qc = QuestionnaireCreatorPage(page)
     case.action("Opening Tools > Questionnaire Creator via the nav dropdown", kind="navigate")
-    menu.open_item("Questionnaire Creator")
-    return QuestionnaireCreatorPage(page)
+    menu.open_item("Questionnaire Creator", ready_locator=qc.heading)
+    return qc
 
 
 def _start_over_and_confirm(case, page, qc: QuestionnaireCreatorPage):
@@ -312,8 +313,8 @@ def test_questionnairecreator_07_add_to_project_saves_and_appears_in_projects(pa
 
     case.step(1, f"Open Tools > Projects and create target project '{target_project}'")
     case.action("Opening Tools > Projects via the nav dropdown", kind="navigate")
-    menu.open_item("Projects")
     projects = ProjectsPage(page)
+    menu.open_item("Projects", ready_locator=projects.new_project_button)
     case.click(projects.new_project_button, "'New Project' button")
     page.wait_for_timeout(500)
     case.fill(projects.modal_name_input, target_project, "'Project Name' field")
@@ -323,8 +324,8 @@ def test_questionnairecreator_07_add_to_project_saves_and_appears_in_projects(pa
 
     case.step(2, f"Open Questionnaire Creator and insert '{FIXTURE_QUESTION}'")
     case.action("Opening Tools > Questionnaire Creator via the nav dropdown", kind="navigate")
-    menu.open_item("Questionnaire Creator")
     qc = QuestionnaireCreatorPage(page)
+    menu.open_item("Questionnaire Creator", ready_locator=qc.heading)
     case.click(qc.question_node(FIXTURE_QUESTION).first, f"'{FIXTURE_QUESTION}' tree question",
                force=True, native_js=True)
     page.wait_for_timeout(1000)
@@ -359,8 +360,8 @@ def test_questionnairecreator_07_add_to_project_saves_and_appears_in_projects(pa
     item_found = False
     if api_ok:
         case.action("Opening Tools > Projects via the nav dropdown", kind="navigate")
-        menu.open_item("Projects")
         projects = ProjectsPage(page)
+        menu.open_item("Projects", ready_locator=projects.new_project_button)
         title_span = projects.project_title(target_project)
         case.click(title_span.first, f"'{target_project}' project title")
         page.wait_for_timeout(1500)
@@ -381,8 +382,8 @@ def test_questionnairecreator_07_add_to_project_saves_and_appears_in_projects(pa
         case.click(projects.delete_confirm_button, "'Delete' confirm button")
         page.wait_for_timeout(1000)
     case.action("Opening Tools > Questionnaire Creator via the nav dropdown", kind="navigate")
-    menu.open_item("Questionnaire Creator")
     qc = QuestionnaireCreatorPage(page)
+    menu.open_item("Questionnaire Creator", ready_locator=qc.heading)
     if qc.start_over_button.is_enabled():
         _start_over_and_confirm(case, page, qc)
 

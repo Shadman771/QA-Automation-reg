@@ -11,6 +11,7 @@ from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
 from pages.wta.wta_common import JurisdictionPanel, CategoryTree
+from utils.wait import goto_and_wait_ready
 
 
 class InformationPage:
@@ -24,7 +25,7 @@ class InformationPage:
         self.depth_button = lambda n: page.get_by_role("button", name=str(n), exact=True)
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/Information", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/Information", self.heading)
 
     def is_loaded(self) -> bool:
         return "/wta/Information" in self.page.url and self.heading.is_visible()

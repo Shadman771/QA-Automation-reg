@@ -19,6 +19,7 @@ Full-page DOM dump re-verified live (2026-09-23) for 100% element coverage:
 from playwright.sync_api import Page
 
 from config.settings import BASE_URL
+from utils.wait import goto_and_wait_ready
 
 
 class LoginPage:
@@ -52,7 +53,7 @@ class LoginPage:
         )
 
     def goto(self):
-        self.page.goto(BASE_URL, wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, BASE_URL, self.heading)
 
     def is_loaded(self) -> bool:
         return (self.heading.is_visible() and self.email.is_visible()

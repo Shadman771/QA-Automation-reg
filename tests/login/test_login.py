@@ -169,7 +169,7 @@ def test_login_05_valid_credentials_redirect(page, result):
     case.click(login_page.submit, "Log In button")
 
     case.step(4, "Wait for redirect")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(1500)
     ok = "/wta/Information" in page.url
     case.check("Redirected to /wta/Information after login", ok,
@@ -197,7 +197,7 @@ def test_login_06_forgot_password_link(page, result):
     login_page.goto()
     case.step(2, "Click 'Forgot Password?'")
     case.click(login_page.forgot_password_link, "'Forgot Password?' link")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
 
     case.step(3, "Verify the URL")
     ok = "/auth/forgot-password" in page.url

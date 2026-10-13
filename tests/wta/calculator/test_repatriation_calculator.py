@@ -29,8 +29,9 @@ FEATURE = "WTA Calculator - Repatriation Calculator"
 def _login_and_open(case, page):
     perform_login(case, page)
     case.action("Opening Calculators > Repatriation Calculator", kind="navigate")
-    CalculatorMenu(page).open_item("Repatriation Calculator")
-    return RepatriationCalculatorPage(page)
+    rc = RepatriationCalculatorPage(page)
+    CalculatorMenu(page).open_item("Repatriation Calculator", ready_locator=rc.instructions_heading)
+    return rc
 
 
 def _complete_au_sg_dividends_7pct(case, page, rc, amount="100000"):
@@ -1035,8 +1036,8 @@ def test_repcalc_28_add_to_project_creates_new_project(page, result):
                actual=f"status={add_response.status}, body={add_response.json()}")
 
     case.step(4, "Clean up the created project via Tools > Projects")
-    ToolsMenu(page).open_item("Projects")
     projects = ProjectsPage(page)
+    ToolsMenu(page).open_item("Projects", ready_locator=projects.new_project_button)
     if projects.project_exists(project_name):
         case.click(projects.row_action(project_name, "Delete"), f"'Delete' action for '{project_name}'")
         page.wait_for_timeout(500)

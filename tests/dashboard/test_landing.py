@@ -113,7 +113,7 @@ def test_landing_03_navigate_to_news(page, result):
 
     case.step(2, "Click the News nav link")
     case.click(landing.nav_news, "'News' nav link")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
 
     case.step(3, "Verify the URL")
     ok = "/wta/News" in page.url
@@ -219,7 +219,7 @@ def test_landing_06_navigate_to_forms(page, result):
     landing = LandingPage(page)
     case.step(2, "Click the Forms nav link")
     case.click(landing.nav_forms, "'Forms' nav link")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
     case.step(3, "Verify the URL")
     ok = "/wta/Forms" in page.url
     case.check("URL contains /wta/Forms", ok, expected="/wta/Forms", actual=page.url)
@@ -242,7 +242,7 @@ def test_landing_07_navigate_to_regulations(page, result):
     landing = LandingPage(page)
     case.step(2, "Click the Regulations nav link")
     case.click(landing.nav_regulations, "'Regulations' nav link")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
     case.step(3, "Verify the URL")
     ok = "/wta/Regulations" in page.url
     case.check("URL contains /wta/Regulations", ok, expected="/wta/Regulations", actual=page.url)
@@ -913,11 +913,11 @@ def test_landing_30_browser_back_returns_to_information(page, result):
     landing = LandingPage(page)
     case.step(2, "Click 'News'")
     case.click(landing.nav_news, "'News' nav link")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
     case.step(3, "Navigate back")
     case.action("Navigating back", kind="navigate")
     page.go_back()
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(500)
     case.step(4, "Verify the URL")
     ok = "/wta/Information" in page.url
@@ -944,7 +944,7 @@ def test_landing_31_page_reload_preserves_session(page, result):
     landing = LandingPage(page)
     case.step(2, "Reload the page")
     case.action("Reloading the page", kind="navigate")
-    page.reload(wait_until="networkidle")
+    page.reload(wait_until="domcontentloaded")
     page.wait_for_timeout(800)
     case.step(3, "Verify the session persisted")
     ok = "/wta/Information" in page.url and "/auth/login" not in page.url

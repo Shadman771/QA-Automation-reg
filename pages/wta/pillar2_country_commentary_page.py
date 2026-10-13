@@ -13,6 +13,7 @@ from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
 from pages.wta.wta_common import JurisdictionPanel
+from utils.wait import goto_and_wait_ready
 
 
 class CountryCommentaryPage:
@@ -26,4 +27,4 @@ class CountryCommentaryPage:
         self.export_pdf_button = page.get_by_role("button", name="Export commentary as PDF")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/CountryCommentary", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/CountryCommentary", self.placeholder_text)

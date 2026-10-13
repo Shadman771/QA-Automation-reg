@@ -82,7 +82,7 @@ def test_p2menu_02_each_internal_item_navigates(page, result, item_name):
 
     case.step(3, f"Click '{item_name}'")
     case.click(menu.item(item_name), f"'{item_name}' menu item")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(600)
 
     case.step(4, "Verify the URL")
@@ -115,7 +115,7 @@ def test_p2menu_03_simulator_navigates_outside_wta(page, result):
 
     case.step(3, "Click 'Simulator'")
     case.click(menu.item("Simulator"), "'Simulator' menu item")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(800)
 
     case.step(4, "Verify the URL")

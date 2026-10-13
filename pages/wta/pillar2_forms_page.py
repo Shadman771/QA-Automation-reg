@@ -7,6 +7,7 @@ from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
 from pages.wta.wta_common import JurisdictionPanel
+from utils.wait import goto_and_wait_ready
 
 
 class PillarTwoFormsPage:
@@ -24,4 +25,4 @@ class PillarTwoFormsPage:
         self.download_links = page.get_by_text("English", exact=True)
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoForms", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/PillarTwoForms", self.placeholder_text)

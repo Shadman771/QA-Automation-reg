@@ -48,6 +48,7 @@ from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
 from pages.wta.wta_common import JurisdictionPanel
+from utils.wait import goto_and_wait_ready
 
 OTHER_ARTICLES_HEADERS = ["Jurisdiction", "Tie Breaker Corporate", "Capital Gain", "Other Income", "Exchange of Information"]
 
@@ -82,7 +83,7 @@ class OtherArticlesPage:
         self.full_dta_contents_list_items = page.locator(".rs-modal-content li")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/OtherArticles", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/OtherArticles", self.placeholder_text)
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

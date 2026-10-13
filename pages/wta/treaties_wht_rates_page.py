@@ -23,6 +23,7 @@ from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
 from pages.wta.wta_common import JurisdictionPanel
+from utils.wait import goto_and_wait_ready
 
 WHT_RATES_HEADERS = [
     "Jurisdiction", "Div-Sub. hold", "Div-Portfolio", "INT(GEN)", "INT(C.B.)", "INT(Bank)",
@@ -48,7 +49,7 @@ class WHTRatesPage:
         self.article_modal_ok_button = page.get_by_role("button", name="OK")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/WHTRates", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/WHTRates", self.placeholder_text)
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

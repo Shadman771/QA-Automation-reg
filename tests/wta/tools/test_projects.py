@@ -36,9 +36,10 @@ def _unique_title(tag: str) -> str:
 def _login_and_open(case, page):
     perform_login(case, page)
     menu = ToolsMenu(page)
+    projects = ProjectsPage(page)
     case.action("Opening Tools > Projects via the nav dropdown", kind="navigate")
-    menu.open_item("Projects")
-    return ProjectsPage(page)
+    menu.open_item("Projects", ready_locator=projects.new_project_button)
+    return projects
 
 
 def _create_project(case, page, projects: ProjectsPage, title: str):
@@ -772,7 +773,7 @@ def test_projects_15_created_project_survives_a_page_reload(page, result):
 
     case.step(3, "Reload the page")
     case.action("Reloading /wta/Project", kind="navigate")
-    page.reload(wait_until="networkidle")
+    page.reload(wait_until="domcontentloaded")
     page.wait_for_timeout(1000)
 
     case.step(4, f"Verify the URL is still /wta/Project and '{title}' is still listed")

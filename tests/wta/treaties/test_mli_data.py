@@ -89,7 +89,7 @@ def test_mlidata_03_clicking_jurisdiction_header_reverses_sort_order(page, resul
 
     case.step(2, "Click the 'Jurisdiction' column header")
     case.click(mli.jurisdiction_header, "'Jurisdiction' column header")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(600)
 
     case.step(3, "Verify the sort flipped")

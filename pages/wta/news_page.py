@@ -10,6 +10,7 @@ from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
 from pages.wta.wta_common import JurisdictionPanel
+from utils.wait import goto_and_wait_ready
 
 
 class NewsPage:
@@ -25,7 +26,7 @@ class NewsPage:
         self.add_to_project_buttons = page.get_by_role("button", name="Add to Project")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/News", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/News", self.placeholder_text)
 
     def is_loaded(self) -> bool:
         return "/wta/News" in self.page.url

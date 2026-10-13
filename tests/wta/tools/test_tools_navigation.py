@@ -71,7 +71,7 @@ def test_toolsmenu_02_each_item_navigates(page, result, item_name):
 
     case.step(3, f"Click '{item_name}'")
     case.click(menu.item(item_name), f"'{item_name}' menu item")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(600)
 
     case.step(4, "Verify the URL")
@@ -104,7 +104,7 @@ def test_toolsmenu_03_direct_deep_link_redirects_to_information(page, result, it
     _login(case, page)
     case.step(2, f"Navigate directly to {TOOLS_ITEM_URLS[item_name]}")
     case.action(f"Navigating directly to {TOOLS_ITEM_URLS[item_name]}", kind="navigate")
-    page.goto(BASE_URL.rstrip("/") + TOOLS_ITEM_URLS[item_name], wait_until="networkidle")
+    page.goto(BASE_URL.rstrip("/") + TOOLS_ITEM_URLS[item_name], wait_until="domcontentloaded")
     page.wait_for_timeout(800)
 
     case.step(3, "Verify the app redirected to /wta/Information")

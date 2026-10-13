@@ -18,6 +18,7 @@ once)."""
 from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
+from utils.wait import goto_and_wait_ready
 
 MLI_DATA_HEADERS = [
     "Jurisdiction", "Signature",
@@ -37,7 +38,7 @@ class MLIDataPage:
         self.jurisdiction_header = page.locator("th").filter(has_text="Jurisdiction")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/MLIData?sort=jurisdiction%3Aasc", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/MLIData?sort=jurisdiction%3Aasc", self.jurisdiction_header)
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

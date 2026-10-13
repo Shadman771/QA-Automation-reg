@@ -24,6 +24,7 @@ from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
 from pages.wta.wta_common import JurisdictionPanel
+from utils.wait import goto_and_wait_ready
 
 PE_CLAUSES_HEADERS = ["Jurisdiction", "Fixed Base", "Construction Assembly", "Dependent Agent", "Services", "Exempt PE"]
 
@@ -46,7 +47,7 @@ class PEClausesPage:
         self.article_modal_ok_button = page.get_by_role("button", name="OK")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/PEClauses", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/PEClauses", self.placeholder_text)
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

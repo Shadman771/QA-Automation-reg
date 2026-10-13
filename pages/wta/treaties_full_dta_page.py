@@ -39,6 +39,7 @@ from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
 from pages.wta.wta_common import JurisdictionPanel
+from utils.wait import goto_and_wait_ready
 
 
 class FullDtaPage:
@@ -66,7 +67,7 @@ class FullDtaPage:
         return row.locator("button.reg-link-button", has_text="View")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/FullDta", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/FullDta", self.placeholder_text)
 
     def headers(self):
         return self.table.first.locator("th").all_inner_texts()

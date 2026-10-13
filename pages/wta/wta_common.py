@@ -35,21 +35,11 @@ Every module-specific page object in this package composes a
 `JurisdictionPanel` instance instead of redeclaring these locators."""
 from playwright.sync_api import Page
 
-
-def wait_for_content(locator, timeout: int = 10000) -> bool:
-    """Waits for a server-rendered content locator (a table, a 'Showing
-    ... of <Country>' heading, a commentary section, etc.) to become
-    visible after a jurisdiction/category selection. Confirmed live: these
-    pages fetch data from the backend on selection, so a fixed short sleep
-    is not reliably enough time under real network latency - this waits
-    for the actual DOM change (up to `timeout`ms) instead of guessing a
-    delay. Never raises; returns False (not visible in time) so callers
-    assert on the boolean the same way they would on `Locator.is_visible()`."""
-    try:
-        locator.first.wait_for(state="visible", timeout=timeout)
-        return True
-    except Exception:
-        return False
+# Re-exported for backward compatibility - every WTA page's goto() now uses
+# utils.wait.goto_and_wait_ready() directly (see utils/wait.py for the full
+# "loader problem" writeup), but existing test files importing
+# wait_for_content from here keep working unchanged.
+from utils.wait import wait_for_content  # noqa: F401
 
 
 class JurisdictionPanel:

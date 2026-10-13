@@ -76,7 +76,12 @@ def _login_and_cache(browser) -> None:
     context = browser.new_context(viewport={"width": 1440, "height": 900})
     try:
         page = context.new_page()
-        page.goto(BASE_URL, wait_until="networkidle")
+        # "domcontentloaded", not "networkidle" - see utils/wait.py. Waits
+        # explicitly for the email field itself to be ready rather than
+        # assuming the navigation wait alone means the login form has
+        # rendered.
+        page.goto(BASE_URL, wait_until="domcontentloaded")
+        page.locator("#email").wait_for(state="visible", timeout=20000)
         page.locator("#email").fill(LOGIN_EMAIL)
         page.locator("#password").fill(LOGIN_PASSWORD)
         page.locator('button[type="submit"]').click()

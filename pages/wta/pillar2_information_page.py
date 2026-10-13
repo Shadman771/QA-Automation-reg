@@ -11,6 +11,7 @@ from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
 from pages.wta.wta_common import JurisdictionPanel, CategoryTree
+from utils.wait import goto_and_wait_ready
 
 GMT_CATEGORIES = [
     "Scope of GMT", "Income Inclusion Rule (IIR)", "Undertaxed Profits Rule (UTPR)",
@@ -29,4 +30,4 @@ class PillarTwoInformationPage:
         self.showing_heading = lambda country: page.get_by_text(f"Showing information of", exact=False)
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/PillarTwoInformation", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/PillarTwoInformation", self.placeholder_text)

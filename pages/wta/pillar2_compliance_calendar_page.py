@@ -8,6 +8,7 @@ from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
 from pages.wta.wta_common import JurisdictionPanel
+from utils.wait import goto_and_wait_ready
 
 DEADLINE_TYPES = [
     "GIR Filing Deadline", "Notification Deadline", "Registration Deadline",
@@ -26,4 +27,4 @@ class ComplianceCalendarPage:
         self.table_header_due_date = page.get_by_role("columnheader", name="Due Date")
 
     def goto(self):
-        self.page.goto(f"{APP_ORIGIN}/wta/ComplianceCalendar", wait_until="domcontentloaded")
+        goto_and_wait_ready(self.page, f"{APP_ORIGIN}/wta/ComplianceCalendar", self.placeholder_text)

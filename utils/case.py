@@ -58,7 +58,10 @@ class Case:
 
     def goto(self, url: str, label: str = ""):
         self.action(f"Navigating to {label or url}", kind="navigate")
-        self.page.goto(url, wait_until="networkidle")
+        # "domcontentloaded", not "networkidle" - see utils/wait.py. The
+        # caller's own next assertion (verify_visible() etc.) now actually
+        # waits for real content, so it covers the rest.
+        self.page.goto(url, wait_until="domcontentloaded")
 
     def click(self, locator, label: str, force: bool = False, native_js: bool = False):
         """native_js: dispatches a real DOM click via `element.click()`

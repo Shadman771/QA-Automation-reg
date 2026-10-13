@@ -31,6 +31,8 @@ the DOM below ~1600px viewport width (confirmed: 0 matches at 1440/1500,
 directory-local 1680x900 viewport override for this reason."""
 from playwright.sync_api import Page
 
+from utils.wait import wait_after_menu_navigation
+
 TOOLS_ITEMS = ["Projects", "Questionnaire Creator"]
 
 TOOLS_ITEM_URLS = {
@@ -57,11 +59,19 @@ class ToolsMenu:
         anchor = li.locator("a")
         return anchor.first
 
-    def open_item(self, name: str):
+    def open_item(self, name: str, ready_locator=None):
         """The only supported way to reach a Tools page - see module
-        docstring: direct goto() to either Tools URL redirects away."""
+        docstring: direct goto() to either Tools URL redirects away.
+        `ready_locator`: pass the destination page's own "this has loaded"
+        marker (a heading, placeholder, etc.) so this waits for real
+        content the same way every goto()-based page does (see
+        utils/wait.py) - callers should always pass this; it's optional
+        only so existing call sites keep working if not updated yet."""
         self.open()
         self.page.wait_for_timeout(400)
         self.item(name).click()
         self.page.wait_for_load_state("domcontentloaded")
-        self.page.wait_for_timeout(600)
+        if ready_locator is not None:
+            wait_after_menu_navigation(self.page, ready_locator)
+        else:
+            self.page.wait_for_timeout(600)
