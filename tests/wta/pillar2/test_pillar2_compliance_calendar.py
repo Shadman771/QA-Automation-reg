@@ -9,8 +9,8 @@ Manually verified against the live application first (scripts/discover_wta.py):
     Deadline."""
 import pytest
 
-from pages.pillar2_compliance_calendar_page import ComplianceCalendarPage, DEADLINE_TYPES
-from pages.wta_common import wait_for_content
+from pages.wta.pillar2_compliance_calendar_page import ComplianceCalendarPage, DEADLINE_TYPES
+from pages.wta.wta_common import wait_for_content
 from utils.auth import perform_login
 from utils.case import Case
 

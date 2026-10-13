@@ -9,9 +9,9 @@ import time
 
 import pytest
 
-from pages.tools_menu import ToolsMenu
-from pages.tools_projects_page import ProjectsPage
-from pages.tools_questionnaire_creator_page import QuestionnaireCreatorPage
+from pages.wta.tools_menu import ToolsMenu
+from pages.wta.tools_projects_page import ProjectsPage
+from pages.wta.tools_questionnaire_creator_page import QuestionnaireCreatorPage
 from utils.auth import perform_login
 from utils.case import Case
 

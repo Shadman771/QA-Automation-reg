@@ -4,8 +4,8 @@ import os
 
 import pytest
 
-from pages.treaties_full_dta_page import FullDtaPage
-from pages.wta_common import wait_for_content
+from pages.wta.treaties_full_dta_page import FullDtaPage
+from pages.wta.wta_common import wait_for_content
 from utils.auth import perform_login
 from utils.case import Case
 

@@ -2,7 +2,7 @@
 test cases (see README > Failure diagnostics)."""
 from pathlib import Path
 
-from config.settings import LOGS_DIR
+from config.settings import LOGS_DIR, feature_dir as _feature_dir
 
 TEMPLATE = """========================================
 FAILURE REPORT
@@ -40,14 +40,14 @@ ROOT-CAUSE INVESTIGATION:
 def write_failure_log(feature: str, case_id: str, title: str, failed_step: str,
                        expected: str, actual: str, assertion_text: str,
                        url: str = "", console_errors=None, root_cause: str = "Not investigated."):
-    feature_dir = LOGS_DIR / feature
-    feature_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = _feature_dir(LOGS_DIR, feature)
+    out_dir.mkdir(parents=True, exist_ok=True)
     console_block = "\n".join(console_errors) if console_errors else "None captured."
     content = TEMPLATE.format(
         feature=feature, case_id=case_id, title=title, failed_step=failed_step,
         expected=expected, actual=actual, assertion=assertion_text,
         console_errors=console_block, url=url, root_cause=root_cause,
     )
-    out = feature_dir / f"{case_id}_failure.log"
+    out = out_dir / f"{case_id}_failure.log"
     out.write_text(content, encoding="utf-8")
     return out

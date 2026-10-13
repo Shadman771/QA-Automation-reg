@@ -9,7 +9,7 @@ and "Start Over" controls."""
 from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
-from pages.wta_common import JurisdictionPanel
+from pages.wta.wta_common import JurisdictionPanel
 
 
 class NewsPage:

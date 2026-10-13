@@ -4,7 +4,7 @@ this one has NO jurisdiction panel - the table is server-rendered
 immediately on load."""
 import pytest
 
-from pages.treaties_mli_data_page import MLIDataPage, MLI_DATA_HEADERS
+from pages.wta.treaties_mli_data_page import MLIDataPage, MLI_DATA_HEADERS
 from utils.auth import perform_login
 from utils.case import Case
 

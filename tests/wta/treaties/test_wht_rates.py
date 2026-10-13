@@ -4,8 +4,8 @@ import os
 
 import pytest
 
-from pages.treaties_wht_rates_page import WHTRatesPage, WHT_RATES_HEADERS
-from pages.wta_common import wait_for_content
+from pages.wta.treaties_wht_rates_page import WHTRatesPage, WHT_RATES_HEADERS
+from pages.wta.wta_common import wait_for_content
 from utils.auth import perform_login
 from utils.case import Case
 

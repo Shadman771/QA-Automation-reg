@@ -10,7 +10,7 @@ Information page, but without a nested tree (flat categories only)."""
 from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
-from pages.wta_common import JurisdictionPanel, CategoryTree
+from pages.wta.wta_common import JurisdictionPanel, CategoryTree
 
 GMT_CATEGORIES = [
     "Scope of GMT", "Income Inclusion Rule (IIR)", "Undertaxed Profits Rule (UTPR)",

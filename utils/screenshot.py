@@ -2,12 +2,12 @@
 import shutil
 from pathlib import Path
 
-from config.settings import SCREENSHOTS_DIR, PROJECT_ROOT
+from config.settings import SCREENSHOTS_DIR, PROJECT_ROOT, feature_dir
 
 
 def capture(page, feature: str, case_id: str, passed: bool) -> Path:
     bucket = "PASS" if passed else "FAIL"
-    out_dir = SCREENSHOTS_DIR / bucket / feature / case_id
+    out_dir = feature_dir(SCREENSHOTS_DIR / bucket, feature) / case_id
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{case_id}.png"
     page.screenshot(path=str(out_path), full_page=True)
@@ -22,7 +22,7 @@ def finalize_evidence(evidence: list, feature: str, case_id: str, passed: bool) 
     screenshot} dicts (screenshot path relative to PROJECT_ROOT, forward
     slashes) ready to embed in the report/JSON."""
     bucket = "PASS" if passed else "FAIL"
-    out_dir = SCREENSHOTS_DIR / bucket / feature / case_id
+    out_dir = feature_dir(SCREENSHOTS_DIR / bucket, feature) / case_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
     result = []
@@ -41,7 +41,7 @@ def finalize_evidence(evidence: list, feature: str, case_id: str, passed: bool) 
             "label": item.get("label"), "screenshot": rel,
         })
 
-    pending_dir = SCREENSHOTS_DIR / "_pending" / feature / case_id
+    pending_dir = feature_dir(SCREENSHOTS_DIR / "_pending", feature) / case_id
     try:
         if pending_dir.exists() and not any(pending_dir.iterdir()):
             pending_dir.rmdir()

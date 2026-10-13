@@ -14,8 +14,8 @@ import os
 
 import pytest
 
-from pages.forms_page import FormsPage, FORM_CATEGORIES
-from pages.wta_common import wait_for_content
+from pages.wta.forms_page import FormsPage, FORM_CATEGORIES
+from pages.wta.wta_common import wait_for_content
 from utils.auth import perform_login
 from utils.case import Case
 

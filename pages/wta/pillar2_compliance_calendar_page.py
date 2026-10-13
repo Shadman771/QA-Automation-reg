@@ -7,7 +7,7 @@ Top-Up Tax Payment Deadline, Top-Up Tax Return Filing Deadline."""
 from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
-from pages.wta_common import JurisdictionPanel
+from pages.wta.wta_common import JurisdictionPanel
 
 DEADLINE_TYPES = [
     "GIR Filing Deadline", "Notification Deadline", "Registration Deadline",

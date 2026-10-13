@@ -10,7 +10,7 @@ import re
 from utils.logger import get_logger, step as log_step, action as log_action, assertion as log_assertion
 from utils.highlight import highlight
 from utils import dashboard
-from config.settings import SCREENSHOTS_DIR, ASSERTION_TIMEOUT_MS
+from config.settings import SCREENSHOTS_DIR, ASSERTION_TIMEOUT_MS, feature_dir
 
 
 class Case:
@@ -26,7 +26,7 @@ class Case:
         self.steps = steps
         self.assertions = []
         self.evidence = []
-        self._evidence_dir = SCREENSHOTS_DIR / "_pending" / feature / case_id
+        self._evidence_dir = feature_dir(SCREENSHOTS_DIR / "_pending", feature) / case_id
         self._evidence_n = 0
         self.logger = get_logger(feature)
         dashboard.start_case(feature, case_id, title)

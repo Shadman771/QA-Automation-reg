@@ -10,7 +10,7 @@ scripts):
     _03 below documents that as a real, asserted application behavior."""
 import pytest
 
-from pages.tools_menu import ToolsMenu, TOOLS_ITEMS, TOOLS_ITEM_URLS
+from pages.wta.tools_menu import ToolsMenu, TOOLS_ITEMS, TOOLS_ITEM_URLS
 from utils.auth import perform_login
 from utils.case import Case
 from config.settings import BASE_URL

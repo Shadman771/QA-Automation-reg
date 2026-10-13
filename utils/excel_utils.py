@@ -1,13 +1,15 @@
-"""Writes one Excel file per feature under test_data/<Feature>/, columns
-per the spec: Test Case ID, Feature, Title, Description, Precondition,
-Test Data, Steps, Expected Result, Actual Result, Assertions, Result."""
+"""Writes one Excel file per feature under test_data/<Feature>/ (or
+test_data/WTA/<Feature>/ for any feature belonging to the WTA parent
+module - mirrors tests/wta/ and pages/wta/, see AGENT.md), columns per the
+spec: Test Case ID, Feature, Title, Description, Precondition, Test Data,
+Steps, Expected Result, Actual Result, Assertions, Result."""
 from pathlib import Path
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from config.settings import TEST_DATA_DIR
+from config.settings import TEST_DATA_DIR, feature_dir
 
 COLUMNS = ["Test Case ID", "Feature", "Title", "Description", "Precondition",
            "Test Data", "Steps", "Expected Result", "Actual Result",
@@ -56,7 +58,7 @@ def write_feature_excel(feature: str, cases: list) -> Path:
     for i, w in enumerate(widths, start=1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
-    out_dir = TEST_DATA_DIR / feature
+    out_dir = feature_dir(TEST_DATA_DIR, feature)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{feature}_Test_Cases.xlsx"
     wb.save(out_path)

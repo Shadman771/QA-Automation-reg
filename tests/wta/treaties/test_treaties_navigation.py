@@ -7,7 +7,7 @@ Manually verified against the live application first (scripts/discover_treaties*
     item here."""
 import pytest
 
-from pages.treaties_menu import TreatiesMenu, TREATIES_ITEMS, TREATIES_ITEM_URLS
+from pages.wta.treaties_menu import TreatiesMenu, TREATIES_ITEMS, TREATIES_ITEM_URLS
 from utils.auth import perform_login
 from utils.case import Case
 

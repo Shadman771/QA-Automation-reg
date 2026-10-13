@@ -41,27 +41,32 @@ pass rate is compared against it; no HTML/JS edits required to change it.
 python run_tests.py
 ```
 
-Runs every feature in `FEATURE_PATHS` (Login, Dashboard, Information,
-Pillar2, News, Forms, Regulations, Treaties, Tools), cleans previous screenshots/logs/report
-first, regenerates the HTML report and per-feature Excel files, and prints
-the report path. Runs headed by default (`HEADLESS=false` in `.env`) and
-opens the live dashboard (`http://127.0.0.1:8787/dashboard.html`)
+Runs every feature in `FEATURE_PATHS` (Login, Dashboard, and every WTA feature:
+Information, Pillar2, News, Forms, Regulations, Treaties, Tools, Calculator), cleans
+previous screenshots/logs/report first, regenerates the HTML report and per-feature
+Excel files, and prints the report path. Runs headed by default (`HEADLESS=false`
+in `.env`) and opens the live dashboard (`http://127.0.0.1:8787/dashboard.html`)
 automatically - see README.md > "Watching it run".
 
 ## Run One Feature
 
 ```bash
-python run_tests.py --feature Login
-python run_tests.py --feature Dashboard
-python run_tests.py --feature Information      # WTA Information workspace
+python run_tests.py --feature Login             # platform-level (outside the WTA parent module)
+python run_tests.py --feature Dashboard         # platform-level
+
+python run_tests.py --feature Wta               # EVERY WTA feature at once (the whole parent module)
+
+python run_tests.py --feature Information       # WTA Information workspace
 python run_tests.py --feature Pillar2           # Pillar 2 menu + all 6 sub-pages
 python run_tests.py --feature News              # WTA News (top-level)
 python run_tests.py --feature Forms             # WTA Forms (top-level)
 python run_tests.py --feature Regulations       # WTA Regulations (top-level)
 python run_tests.py --feature Treaties          # Treaties menu + all 5 sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data)
 python run_tests.py --feature Tools             # Tools menu + Projects + Questionnaire Creator
-python run_tests.py --feature Calculator        # Calculators menu + Corporate Rate Finder
+python run_tests.py --feature Calculator        # Calculators menu + Corporate Rate Finder, Repatriation Calculator
 ```
+
+(`--feature` is case-insensitive, matching `run_tests.py`'s own lookup.)
 
 ## Run One Test Case
 
@@ -142,11 +147,20 @@ Evidence" gallery on each test case's report card, in addition to the final full
 
 ## Adding a Feature
 
-1. Add its page object under `pages/` (reuse `pages/wta_common.py`'s `JurisdictionPanel`/`CategoryTree`
-   for any WTA module with the "Jurisdictions [and Categories/Filters]" left panel).
-2. Add its tests under `tests/<feature>/`.
-3. Add the feature to `FEATURE_PATHS` in `run_tests.py`.
-4. `python run_tests.py --feature <Name>`
+**For a new WTA feature** (part of the World Tax Analyzer product):
+1. Add its page object under `pages/wta/` (reuse `pages/wta/wta_common.py`'s `JurisdictionPanel`/`CategoryTree`
+   for any module with the "Jurisdictions [and Categories/Filters]" left panel).
+2. Add its tests under `tests/wta/<feature>/`.
+3. Add the feature to `WTA_FEATURE_PATHS` in `run_tests.py`.
+4. `python run_tests.py --feature <name>`
+
+**For a platform-level feature** (not part of any product, like Login/Dashboard): the same
+pattern at the top level instead - `pages/`, `tests/<feature>/`, `FEATURE_PATHS` directly.
+
+**For an entirely new parent module** (a product sibling to WTA, e.g. Transfer Pricing
+Analyzer): mirror the WTA shape - `pages/<module>/`, `tests/<module>/<feature>/`,
+`test_data/<MODULE>/<Feature>/` - and register it in `run_tests.py` the same way
+`WTA_FEATURE_PATHS`/the `"wta"` aggregate key are. See `AGENT.md` > "Parent module structure".
 
 ## Discovery scripts
 

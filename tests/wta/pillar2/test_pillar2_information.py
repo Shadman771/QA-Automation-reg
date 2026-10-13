@@ -12,8 +12,8 @@ Manually verified against the live application first (scripts/discover_wta.py):
     content header."""
 import pytest
 
-from pages.pillar2_information_page import PillarTwoInformationPage, GMT_CATEGORIES
-from pages.wta_common import wait_for_content
+from pages.wta.pillar2_information_page import PillarTwoInformationPage, GMT_CATEGORIES
+from pages.wta.wta_common import wait_for_content
 from utils.auth import perform_login
 from utils.case import Case
 

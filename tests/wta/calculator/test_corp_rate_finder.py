@@ -19,9 +19,9 @@ import os
 
 import pytest
 
-from pages.calculator_menu import CalculatorMenu
-from pages.calculator_rate_finder_page import CorporateRateFinderPage, CORPORATE_RATE_API
-from pages.wta_common import wait_for_content
+from pages.wta.calculator_menu import CalculatorMenu
+from pages.wta.calculator_rate_finder_page import CorporateRateFinderPage, CORPORATE_RATE_API
+from pages.wta.wta_common import wait_for_content
 from utils.auth import perform_login
 from utils.case import Case
 

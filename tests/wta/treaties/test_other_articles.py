@@ -5,8 +5,8 @@ import os
 
 import pytest
 
-from pages.treaties_other_articles_page import OtherArticlesPage, OTHER_ARTICLES_HEADERS
-from pages.wta_common import wait_for_content
+from pages.wta.treaties_other_articles_page import OtherArticlesPage, OTHER_ARTICLES_HEADERS
+from pages.wta.wta_common import wait_for_content
 from utils.auth import perform_login
 from utils.case import Case
 

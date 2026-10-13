@@ -13,7 +13,7 @@ Manually verified against the live application first (scripts/discover_wta.py):
     only as a navigation smoke check."""
 import pytest
 
-from pages.pillar2_menu import Pillar2Menu, PILLAR2_ITEMS
+from pages.wta.pillar2_menu import Pillar2Menu, PILLAR2_ITEMS
 from utils.auth import perform_login
 from utils.case import Case
 

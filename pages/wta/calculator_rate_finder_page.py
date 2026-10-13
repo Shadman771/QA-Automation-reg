@@ -50,7 +50,7 @@ selection or not, so it cannot be used as a proxy for "no results yet".
     `CalculatorMenu.open_item("Corporate Rate Finder")`."""
 from playwright.sync_api import Page
 
-from pages.wta_common import JurisdictionPanel
+from pages.wta.wta_common import JurisdictionPanel
 
 CORPORATE_RATE_API = "https://regplusnest.api.kaz.com.bd/api/CorporateRate"
 

@@ -11,8 +11,8 @@ import os
 
 import pytest
 
-from pages.pillar2_regulation_page import PillarTwoRegulationPage
-from pages.wta_common import wait_for_content
+from pages.wta.pillar2_regulation_page import PillarTwoRegulationPage
+from pages.wta.wta_common import wait_for_content
 from utils.auth import perform_login
 from utils.case import Case
 

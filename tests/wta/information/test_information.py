@@ -18,7 +18,7 @@ Every click/fill/check below goes through `case.*` (red-highlight + the
 per-step evidence screenshot gallery)."""
 import pytest
 
-from pages.information_page import InformationPage
+from pages.wta.information_page import InformationPage
 from utils.auth import perform_login
 from utils.case import Case
 

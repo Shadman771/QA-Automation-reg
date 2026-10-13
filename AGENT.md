@@ -20,13 +20,13 @@ This is the single, permanent workspace for this project — never create a seco
 ### URL / environment configuration
 - **Every page object's `goto()` must build its URL from `config.settings.APP_ORIGIN`** (derived from `.env`'s `BASE_URL`), never a literal domain. This was a real, shipped bug: 15 page objects had `https://regplus.kaz.com.bd/...` hardcoded, so changing `BASE_URL` in `.env` silently had no effect on those pages — they kept navigating to the old domain regardless of configuration, which looked like "login redirects to the wrong environment." Fixed; watch for this pattern in any new page object.
 - This app has shipped on at least three real environments seen during development (names are examples, not fixed): a production/"Live" domain, an "RC" (release-candidate/staging) domain, and an older "Staging" domain — each with **different seeded data**. A test failing on one environment because expected data doesn't exist there is a real, expected difference, not an automation bug — don't "fix" it by weakening the assertion; note which environment it was verified against.
-- Several API endpoints are still hardcoded to one environment's domain in a few places (`pages/calculator_rate_finder_page.py::CORPORATE_RATE_API`, `pages/calculator_repatriation_page.py::REPATRIATION_TREATY_API`, `tests/tools/test_projects.py::PROJECT_API`) because their subdomain-naming scheme isn't mechanically derivable from `BASE_URL` across environments (e.g. prod inserts `.api.` into the subdomain, RC doesn't). These specific tests are tied to whichever environment's seeded data they were built against; this is a known, documented limitation, not yet generalized.
+- Several API endpoints are still hardcoded to one environment's domain in a few places (`pages/wta/calculator_rate_finder_page.py::CORPORATE_RATE_API`, `pages/wta/calculator_repatriation_page.py::REPATRIATION_TREATY_API`, `tests/wta/tools/test_projects.py::PROJECT_API`) because their subdomain-naming scheme isn't mechanically derivable from `BASE_URL` across environments (e.g. prod inserts `.api.` into the subdomain, RC doesn't). These specific tests are tied to whichever environment's seeded data they were built against; this is a known, documented limitation, not yet generalized.
 - `page.request.*()` calls bypass this app's auth entirely (it's a JWT bearer token read from `localStorage`, not a cookie `page.request` sends) and get a silent `401`. Any direct API verification/cleanup must go through the browser's own authenticated call (`page.expect_response(...)` around the action that triggers it) or an in-app UI flow — never a bare `page.request.get/post(...)` against this app's API.
 
 ### Known UI gotchas (apply to any new page object)
 - **Every top-nav dropdown** (`Treaties`, `Pillar 2`, `Calculators`, `Tools`, `BEPS`) mounts ALL its `<li class="rs-dropdown-item">` items in the DOM at once, hidden rather than removed. An unscoped `page.locator("li.rs-dropdown-item")` after opening one dropdown returns items from every dropdown. Filter to `.is_visible()` or scope tightly by exact text.
-- **`Treaties`, `Calculators`, `Tools`, `BEPS`** dropdowns are completely ABSENT from the DOM below ~1600px viewport width (no responsive fallback) — any suite covering one needs a directory-local `browser_context_args` override at 1680x900 (see `tests/treaties/conftest.py`, `tests/tools/conftest.py`, `tests/calculator/conftest.py`).
-- rsuite `SelectPicker` components' `aria-expanded` attribute can read `"false"` for a moment right after a genuinely successful click (a React render-commit race) — don't trust it as an "is it open" signal; check whether the listbox's `[role='option']` children are actually visible instead (see `pages/calculator_repatriation_page.py::_ensure_open()`).
+- **`Treaties`, `Calculators`, `Tools`, `BEPS`** dropdowns are completely ABSENT from the DOM below ~1600px viewport width (no responsive fallback) — any suite covering one needs a directory-local `browser_context_args` override at 1680x900 (see `tests/wta/treaties/conftest.py`, `tests/wta/tools/conftest.py`, `tests/wta/calculator/conftest.py`).
+- rsuite `SelectPicker` components' `aria-expanded` attribute can read `"false"` for a moment right after a genuinely successful click (a React render-commit race) — don't trust it as an "is it open" signal; check whether the listbox's `[role='option']` children are actually visible instead (see `pages/wta/calculator_repatriation_page.py::_ensure_open()`).
 - Neither Calculator nor Tools sub-pages support a direct deep link — `page.goto()` to their URL redirects to `/wta/Information`. Reach them only via their menu's `open_item()`.
 
 ### Feature/module structure (as it exists, not generic)
@@ -51,11 +51,20 @@ utils/publish.py       - best-effort push of the report to GitHub Pages (see sec
 utils/dashboard.py     - the live HEADLESS=false execution dashboard
 utils/cleanup.py       - pre-run cleanup; tolerates a file locked by a second concurrent run
                         (prints a warning and skips it, rather than crashing the whole run)
-tests/<feature>/        - one directory per feature/module, test_*.py files
-test_data/<Feature>/    - auto-generated Excel test case files - never hand-edit
+pages/wta/              - every page object for the WTA (World Tax Analyzer) parent module
+pages/login_page.py,
+pages/landing_page.py   - platform-level, OUTSIDE pages/wta/ (pre-product: login, product picker)
+tests/<feature>/        - platform-level test dirs: login/, dashboard/
+tests/wta/<feature>/    - every WTA feature's tests (information, pillar2, news, forms,
+                        regulations, treaties, tools, calculator)
+test_data/<Feature>/    - auto-generated Excel, platform-level features only - never hand-edit
+test_data/WTA/<Feature>/  - auto-generated Excel, every WTA feature - never hand-edit either
 conftest.py             - fixtures, session lifecycle, BLOCKED-conversion hook, report/Excel generation
 run_tests.py            - CLI entry point (prefer this over bare pytest for full runs)
 ```
+
+### Parent module structure
+WTA is one product among several the app offers (Workspace / World Tax Analyzer / Transfer Pricing Analyzer / RegBriefings tabs) - `pages/wta/`, `tests/wta/<feature>/`, `test_data/WTA/<Feature>/` hold everything specific to it. `login`/`dashboard` sit OUTSIDE `wta/` at every level because they're the platform shell that exists before a product is even chosen. `config/settings.py::feature_dir(base, feature)` is the one shared rule every feature-keyed output directory (test_data, screenshots, logs) uses to decide platform-level vs. nested-under-its-parent-module; its `NON_WTA_FEATURES` set currently lists `{"Login", "Dashboard"}` - everything else is treated as WTA. A future parent module (e.g. a `tpa` module for Transfer Pricing Analyzer) gets the identical shape as a sibling of `wta`: `pages/tpa/`, `tests/tpa/<feature>/`, `test_data/TPA/<Feature>/`, registered in `run_tests.py`'s `FEATURE_PATHS` the same way `WTA_FEATURE_PATHS`/the `"wta"` aggregate key are - and `feature_dir()`/`NON_WTA_FEATURES` would need generalizing from a two-way platform/WTA split into a real module lookup at that point.
 
 ### Fixtures
 - `page` (root `conftest.py`): every feature test starts from an already-authenticated context (`storage_state` reuse). Sets `DEFAULT_TIMEOUT_MS`/`NAVIGATION_TIMEOUT_MS` as Playwright defaults.
@@ -67,13 +76,20 @@ run_tests.py            - CLI entry point (prefer this over bare pytest for full
 `DEFAULT_TIMEOUT_MS` (default 15000) and `NAVIGATION_TIMEOUT_MS` (default 30000) are applied globally via `page.set_default_timeout()`/`set_default_navigation_timeout()` in every `page` fixture. `ASSERTION_TIMEOUT_MS` (default 15000) is available in `config.settings` for any explicit `expect()`/custom-assertion timeout a test wants to pass. Override any of them per-run via `.env`, no code changes needed.
 
 ### Waits
-Prefer condition-based waits: Playwright's own action/locator auto-waiting (now backed by the centralized timeouts above), `pages/wta_common.py::wait_for_content(locator, timeout=...)` for "did the async-rendered content show up", and `utils/session.py::wait_for_login_sync()` for the post-login provisioning screen. **`page.wait_for_timeout(ms)` fixed waits are still used throughout the suite** (over 100 files) as short settle/debounce buffers after an interaction, not as the primary correctness mechanism — this is a known, accepted trade-off (rewriting all of them to condition-based waits was assessed as high-risk/low-value busywork across a huge surface area, not attempted wholesale). When you hit a REAL flake traceable to insufficient waiting, fix that specific call site with a proper condition-based wait rather than a longer fixed sleep; don't do a blind global sweep.
+Prefer condition-based waits: Playwright's own action/locator auto-waiting (now backed by the centralized timeouts above), `pages/wta/wta_common.py::wait_for_content(locator, timeout=...)` for "did the async-rendered content show up", and `utils/session.py::wait_for_login_sync()` for the post-login provisioning screen. **`page.wait_for_timeout(ms)` fixed waits are still used throughout the suite** (over 100 files) as short settle/debounce buffers after an interaction, not as the primary correctness mechanism — this is a known, accepted trade-off (rewriting all of them to condition-based waits was assessed as high-risk/low-value busywork across a huge surface area, not attempted wholesale). When you hit a REAL flake traceable to insufficient waiting, fix that specific call site with a proper condition-based wait rather than a longer fixed sleep; don't do a blind global sweep.
+
+**Every page object's `goto()` (and the two menu `open_item()`s that wait after a dropdown click) uses `wait_until="domcontentloaded"`, never `"networkidle"`.** This app keeps persistent background requests going on its authenticated pages (notification polling, analytics) that can prevent true network-idle from ever being reached — confirmed live as a real, reproducible 30-second navigation timeout cascading across nearly every feature, not a slow-network flake. `utils/session.py::wait_for_login_sync()` (or the test's own subsequent `wait_for_content`/`verify_visible` calls) is the actual "is it ready" check; the navigation wait only needs the document to exist. If you add a new page object, copy this pattern — don't reach for `networkidle` even though it reads as the "safer" choice.
+
+**`Case.verify_visible()` actually waits** (up to `ASSERTION_TIMEOUT_MS`) for the element rather than doing an instant `is_visible()` check — `Locator.is_visible()` alone does NOT auto-retry the way `.click()`/`expect()` do. This was a real, previously-masked gap: it worked for a long time only because `networkidle` navigation happened to pre-render everything before any assertion ran; removing `networkidle` exposed it. If you ever add a new instant-check helper to `Case`, make it wait the same way.
 
 ## 4. Execution rules
 
 ```bash
 python run_tests.py                     # full suite - the standard way to run this project
-python run_tests.py --feature calculator
+python run_tests.py --feature wta       # every WTA feature at once (the whole parent module)
+python run_tests.py --feature calculator  # one WTA feature (also: information, pillar2, news,
+                                           # forms, regulations, treaties, tools)
+python run_tests.py --feature login     # a platform-level feature (also: dashboard)
 python run_tests.py --test LOGIN_05     # one specific Test Case ID
 python run_tests.py --smoke             # @pytest.mark.smoke only, ALL features (not just one)
 python run_tests.py --regression        # @pytest.mark.regression only, ALL features
@@ -117,7 +133,7 @@ A single-test or filtered pytest invocation still regenerates `reports/automatio
 
 ## 8. Maintenance
 
-- **Add a feature**: page object in `pages/` (goto from `APP_ORIGIN`), tests in `tests/<feature>/`, add to `FEATURE_PATHS` in `run_tests.py`, run `python run_tests.py --feature <Name>`. Full walkthrough: `ALL_COMMANDS.md` > "Adding a Feature".
+- **Add a WTA feature**: page object in `pages/wta/` (goto from `APP_ORIGIN`), tests in `tests/wta/<feature>/`, add to `WTA_FEATURE_PATHS` in `run_tests.py`, run `python run_tests.py --feature <name>`. For a platform-level feature (not part of any product), the same pattern at the top level instead (`pages/`, `tests/<feature>/`, `FEATURE_PATHS`). Full walkthrough: `ALL_COMMANDS.md` > "Adding a Feature".
 - **Add a test case**: follow the `Case`-driven pattern in any existing test in the same module; Excel/report entries are generated automatically from the run, never hand-authored.
 - **Update environment variables**: add to `config/settings.py` with a sensible default, document in `.env.example`, mention here if it affects cross-cutting behavior (timeouts, thresholds).
 - **Validate and push**: run the directly-affected tests, then ideally the full suite, review `git status`/`git diff` for anything unexpected (especially nothing from `.env` or real credentials), commit, push to `newrepo` (and attempt `origin` honestly reporting its known failure).

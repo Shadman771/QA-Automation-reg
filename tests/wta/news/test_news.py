@@ -13,8 +13,8 @@ Manually verified against the live application first (scripts/discover_wta.py):
     genuinely HAS news articles in the current window."""
 import pytest
 
-from pages.news_page import NewsPage
-from pages.wta_common import wait_for_content
+from pages.wta.news_page import NewsPage
+from pages.wta.wta_common import wait_for_content
 from utils.auth import perform_login
 from utils.case import Case
 

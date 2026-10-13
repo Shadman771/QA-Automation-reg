@@ -23,17 +23,31 @@ import pytest
 PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+# Parent module -> main feature -> subfeature/page -> test cases, mirrored
+# physically: tests/wta/<feature>/, pages/wta/<feature>_page.py,
+# test_data/WTA/<Feature>/. "login" and "dashboard" sit OUTSIDE the "wta"
+# parent module - they're the pre-product/platform shell (auth, the
+# post-login landing page's product picker), not part of the World Tax
+# Analyzer product itself. Future parent modules (e.g. a "tpa" module for
+# Transfer Pricing Analyzer) would get their own tests/<module>/,
+# pages/<module>/, test_data/<MODULE>/ siblings of "wta" here, following
+# the exact same pattern - see AGENT.md.
+WTA_FEATURE_PATHS = {
+    "information": "tests/wta/information",
+    "pillar2": "tests/wta/pillar2",
+    "news": "tests/wta/news",
+    "forms": "tests/wta/forms",
+    "regulations": "tests/wta/regulations",
+    "treaties": "tests/wta/treaties",
+    "tools": "tests/wta/tools",
+    "calculator": "tests/wta/calculator",
+}
+
 FEATURE_PATHS = {
     "login": "tests/login",
     "dashboard": "tests/dashboard",
-    "information": "tests/wta_information",
-    "pillar2": "tests/wta_pillar2",
-    "news": "tests/wta_news",
-    "forms": "tests/wta_forms",
-    "regulations": "tests/wta_regulations",
-    "treaties": "tests/treaties",
-    "tools": "tests/tools",
-    "calculator": "tests/calculator",
+    "wta": "tests/wta",  # every WTA feature at once - the parent module
+    **WTA_FEATURE_PATHS,
 }
 
 

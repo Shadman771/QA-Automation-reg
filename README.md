@@ -19,40 +19,41 @@ the other 5 Calculator sub-pages are scoped for future rounds).
 
 ```text
 QA_Automation/
-├── tests/login/          Login test cases
-├── tests/dashboard/      Landing page test cases
-├── tests/wta_information/  WTA Information workspace test cases
-├── tests/wta_pillar2/    Pillar 2 menu + all 6 sub-page test cases
-├── tests/wta_news/       WTA News (top-level) test cases
-├── tests/wta_forms/      WTA Forms (top-level) test cases
-├── tests/wta_regulations/  WTA Regulations (top-level) test cases
-├── tests/treaties/       Treaties menu + all 5 sub-page test cases
-├── tests/tools/          Tools menu + Projects + Questionnaire Creator test cases
-├── tests/calculator/     Calculators menu + Corporate Rate Finder test cases
-├── pages/                Page Object Model - login_page.py, landing_page.py,
-│                         wta_common.py (shared JurisdictionPanel/CategoryTree),
-│                         information_page.py, pillar2_menu.py,
-│                         pillar2_information_page.py,
-│                         pillar2_compliance_calendar_page.py,
-│                         pillar2_forms_page.py,
-│                         pillar2_country_commentary_page.py,
-│                         pillar2_regulation_page.py, pillar2_news_page.py,
-│                         news_page.py, forms_page.py, regulations_page.py,
-│                         treaties_menu.py, treaties_full_dta_page.py,
-│                         treaties_pe_clauses_page.py,
-│                         treaties_other_articles_page.py,
-│                         treaties_wht_rates_page.py, treaties_mli_data_page.py,
-│                         tools_menu.py, tools_projects_page.py,
-│                         tools_questionnaire_creator_page.py,
-│                         calculator_menu.py, calculator_rate_finder_page.py
+├── tests/login/          Login test cases (platform-level, outside the WTA parent module)
+├── tests/dashboard/      Landing page test cases (platform-level)
+├── tests/wta/            The WTA (World Tax Analyzer) parent module - everything below is a
+│                         WTA feature; run them all at once with --feature wta
+│   ├── information/      WTA Information workspace test cases
+│   ├── pillar2/          Pillar 2 menu + all 6 sub-page test cases
+│   ├── news/             WTA News (top-level) test cases
+│   ├── forms/            WTA Forms (top-level) test cases
+│   ├── regulations/      WTA Regulations (top-level) test cases
+│   ├── treaties/         Treaties menu + all 5 sub-page test cases
+│   ├── tools/            Tools menu + Projects + Questionnaire Creator test cases
+│   └── calculator/       Calculators menu + Corporate Rate Finder, Repatriation Calculator
+├── pages/
+│   ├── login_page.py, landing_page.py   platform-level (outside pages/wta/)
+│   └── wta/              Page Object Model for every WTA feature - wta_common.py (shared
+│                         JurisdictionPanel/CategoryTree), information_page.py, pillar2_menu.py,
+│                         pillar2_information_page.py, pillar2_compliance_calendar_page.py,
+│                         pillar2_forms_page.py, pillar2_country_commentary_page.py,
+│                         pillar2_regulation_page.py, pillar2_news_page.py, news_page.py,
+│                         forms_page.py, regulations_page.py, treaties_menu.py,
+│                         treaties_full_dta_page.py, treaties_pe_clauses_page.py,
+│                         treaties_other_articles_page.py, treaties_wht_rates_page.py,
+│                         treaties_mli_data_page.py, tools_menu.py, tools_projects_page.py,
+│                         tools_questionnaire_creator_page.py, calculator_menu.py,
+│                         calculator_rate_finder_page.py, calculator_repatriation_page.py
 ├── utils/                logger, screenshot (+ per-step evidence),
 │                         highlight, Excel writer, HTML report builder,
 │                         failure-log writer, cleanup, Case model
-├── test_data/            One Excel workbook per feature (generated)
-├── screenshots/PASS|FAIL/<Feature>/<CaseID>/   final shot + per-step evidence
-├── logs/<Feature>/       action log + failure logs
+├── test_data/            One Excel workbook per feature (generated) - Login/, Dashboard/ at
+│                         the top level, every WTA feature nested under WTA/<Feature>/
+├── screenshots/PASS|FAIL/<Feature>|WTA/<Feature>/<CaseID>/   final shot + per-step evidence
+├── logs/<Feature>|WTA/<Feature>/       action log + failure logs
 ├── reports/              automation_report.html + execution_results.json
-├── config/settings.py    reads .env
+├── config/settings.py    reads .env; also APP_ORIGIN, timeouts, feature_dir() (the shared
+│                         platform-vs-WTA path rule every feature-keyed output dir uses)
 ├── conftest.py           fixtures, session-level report/Excel/summary
 ├── run_tests.py          entry point (see ALL_COMMANDS.md)
 └── .env                  BASE_URL / LOGIN_EMAIL / LOGIN_PASSWORD / HEADLESS

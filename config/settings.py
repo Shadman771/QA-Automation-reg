@@ -45,6 +45,23 @@ LOGS_DIR = PROJECT_ROOT / "logs"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 TEST_DATA_DIR = PROJECT_ROOT / "test_data"
 
+# The only features OUTSIDE the "WTA" parent module - the platform/
+# pre-product shell (login, the post-login landing page's product picker).
+# Every other feature belongs to WTA and nests one level deeper under a
+# "WTA" segment (test_data/WTA/<Feature>/, logs/WTA/<Feature>/,
+# screenshots/PASS|FAIL/WTA/<Feature>/) - mirrors tests/wta/ and
+# pages/wta/. Future parent modules follow the same pattern: add their
+# feature names here (or generalize this into a real module-name lookup)
+# rather than hardcoding a new flat exception list elsewhere.
+NON_WTA_FEATURES = {"Login", "Dashboard"}
+
+
+def feature_dir(base: Path, feature: str) -> Path:
+    """base/<Feature> for a platform-level feature, base/WTA/<Feature> for
+    everything else - the one shared rule every feature-keyed output
+    directory (test_data, screenshots, logs) should use."""
+    return base / feature if feature in NON_WTA_FEATURES else base / "WTA" / feature
+
 if not BASE_URL or not LOGIN_EMAIL or not LOGIN_PASSWORD:
     raise RuntimeError(
         "BASE_URL / LOGIN_EMAIL / LOGIN_PASSWORD must be set in .env "

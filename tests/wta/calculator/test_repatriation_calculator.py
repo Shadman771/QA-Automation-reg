@@ -16,10 +16,10 @@ import os
 
 import pytest
 
-from pages.calculator_menu import CalculatorMenu
-from pages.calculator_repatriation_page import RepatriationCalculatorPage, REPATRIATION_TREATY_API
-from pages.tools_menu import ToolsMenu
-from pages.tools_projects_page import ProjectsPage
+from pages.wta.calculator_menu import CalculatorMenu
+from pages.wta.calculator_repatriation_page import RepatriationCalculatorPage, REPATRIATION_TREATY_API
+from pages.wta.tools_menu import ToolsMenu
+from pages.wta.tools_projects_page import ProjectsPage
 from utils.auth import perform_login
 from utils.case import Case
 

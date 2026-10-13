@@ -10,7 +10,7 @@ category are chosen."""
 from playwright.sync_api import Page
 
 from config.settings import APP_ORIGIN
-from pages.wta_common import JurisdictionPanel, CategoryTree
+from pages.wta.wta_common import JurisdictionPanel, CategoryTree
 
 
 class InformationPage:
