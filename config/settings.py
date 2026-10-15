@@ -32,9 +32,27 @@ TIMEOUT = int(os.getenv("TIMEOUT", "30000"))
 # live this was previously dead config: TIMEOUT above was read but never
 # actually applied anywhere, so every call silently used Playwright's
 # built-in 30s default instead of anything in .env).
-DEFAULT_TIMEOUT_MS = int(os.getenv("DEFAULT_TIMEOUT_MS", "15000"))
+# 60000, not 15000: same confirmed-live slow-environment reasoning as
+# ASSERTION_TIMEOUT_MS below - this governs every click()/fill() project-wide
+# (via page.set_default_timeout()), and on a slow account/environment an
+# element can legitimately still be unactionable up to ~60s after
+# navigation, not just the one heading verify_visible() checks.
+DEFAULT_TIMEOUT_MS = int(os.getenv("DEFAULT_TIMEOUT_MS", "60000"))
 NAVIGATION_TIMEOUT_MS = int(os.getenv("NAVIGATION_TIMEOUT_MS", "30000"))
-ASSERTION_TIMEOUT_MS = int(os.getenv("ASSERTION_TIMEOUT_MS", "15000"))
+# 60000, not 15000: confirmed live (direct, timed, isolated reproduction
+# against the Live environment/account) that loading a cached session cold
+# (the normal per-test path once a module's first test has logged in) can
+# take up to ~60s for real page content to actually render, even though the
+# app's own "Syncing with Enterprise Cloud" banner text disappears from the
+# DOM within ~1-4s - that banner clearing is NOT a reliable "content is
+# ready" signal (see utils/session.py::wait_for_login_sync), so
+# Case.verify_visible() - the one place that genuinely waits for real
+# visible content - needs a ceiling long enough to not time out before
+# slower accounts/environments legitimately finish rendering. This does not
+# weaken any assertion: it still requires the real element to actually
+# become visible, it just stops giving up early on a confirmed-real, slower
+# live environment.
+ASSERTION_TIMEOUT_MS = int(os.getenv("ASSERTION_TIMEOUT_MS", "60000"))
 
 DEPLOYMENT_SUCCESS_THRESHOLD = float(
     os.getenv("DEPLOYMENT_SUCCESS_THRESHOLD", os.getenv("SUCCESS_THRESHOLD", "95"))

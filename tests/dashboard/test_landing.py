@@ -639,6 +639,7 @@ def test_landing_21_check_all_unchecked_by_default(page, result):
     _login(case, page)
     landing = LandingPage(page)
     case.step(2, "Verify 'Check All' is unchecked")
+    case.verify_visible(landing.check_all_label, "'Check All' checkbox")
     checked = landing.is_category_checked("Check All")
     ok = checked is False
     case.check("'Check All' checkbox is unchecked by default", ok,
@@ -739,6 +740,7 @@ def test_landing_24_depth_control_expands_category_panel(page, result):
         )
 
     case.step(2, "Record the default category panel text length")
+    case.verify_visible(landing.search_categories, "'Search categories' input")
     before_len = panel_text_len()
 
     case.step(3, "Click Depth '4'")
@@ -993,7 +995,7 @@ def test_landing_33_exactly_four_region_tabs(page, result):
     landing = LandingPage(page)
     case.step(2, "Count the region tabs")
     names = ["Asia Pacific", "Americas", "Europe", "MEA"]
-    landing.region_tab("Asia Pacific").wait_for(state="visible")
+    case.verify_visible(landing.region_tab("Asia Pacific"), "'Asia Pacific' region tab")
     counts = {n: landing.region_tab(n).count() for n in names}
     ok = all(c == 1 for c in counts.values())
     case.check("Each of the 4 region tabs appears exactly once", ok,
@@ -1023,8 +1025,8 @@ def test_landing_34_asia_pacific_country_count(page, result):
     # checkbox that sits in DOM order between the "Search countries" input
     # and the "Search categories" input, which reliably brackets the list.
     # Both inputs must actually be present before this bracketing works.
-    landing.search_countries.wait_for(state="visible")
-    landing.search_categories.wait_for(state="visible")
+    case.verify_visible(landing.search_countries, "'Search countries' input")
+    case.verify_visible(landing.search_categories, "'Search categories' input")
     count = page.evaluate(
         """() => {
             const inputs = [...document.querySelectorAll('input')];
@@ -1056,7 +1058,7 @@ def test_landing_35_exactly_five_main_nav_items(page, result):
     _login(case, page)
     landing = LandingPage(page)
     case.step(2, "Count the main nav items")
-    landing.nav_information.wait_for(state="visible")
+    case.verify_visible(landing.nav_information, "'Information' nav item")
     counts = {
         "Information": landing.nav_information.count(),
         "Pillar 2": landing.nav_pillar2.count(),
@@ -1112,7 +1114,7 @@ def test_landing_37_exactly_four_product_tabs(page, result):
     _login(case, page)
     landing = LandingPage(page)
     case.step(2, "Count the product tabs")
-    landing.tab_workspace.wait_for(state="visible")
+    case.verify_visible(landing.tab_workspace, "'Workspace' product tab")
     counts = {
         "Workspace": landing.tab_workspace.count(),
         "World Tax Analyzer": landing.tab_world_tax_analyzer.count(),

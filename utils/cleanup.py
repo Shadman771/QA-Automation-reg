@@ -14,8 +14,16 @@ def _rmtree_best_effort(path):
     tolerated this way; anything else still surfaces via the printed
     warning."""
     def _on_error(func, target_path, exc_info):
+        # shutil.rmtree's `onexc` callback (Python 3.12+) passes the
+        # exception INSTANCE directly as exc_info, not the old deprecated
+        # `onerror` callback's 3-tuple (func, path, (type, value, tb)).
+        # Using exc_info[1] here (confirmed live, Python 3.13.3) raised
+        # "TypeError: 'PermissionError' object is not subscriptable" from
+        # inside this very handler - crashing the whole run before a single
+        # test executed, every time cleanup hit a locked file, which
+        # defeated the entire point of this best-effort wrapper.
         print(f"[cleanup] WARNING: could not remove '{target_path}' (likely locked by another "
-              f"still-running process) - leaving it in place: {exc_info[1]}")
+              f"still-running process) - leaving it in place: {exc_info}")
 
     shutil.rmtree(path, onexc=_on_error)
 
