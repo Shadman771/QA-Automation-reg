@@ -15,9 +15,10 @@ tests/login/ deliberately opts out of this (see its own conftest.py) since
 those tests exercise the login page/flow itself and must start from a
 genuinely unauthenticated context.
 """
+import json
 from pathlib import Path
 
-from config.settings import BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD, PROJECT_ROOT
+from config.settings import APP_ORIGIN, BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD, PROJECT_ROOT
 
 AUTH_DIR = PROJECT_ROOT / ".auth"
 AUTH_STATE_PATH = AUTH_DIR / "state.json"
@@ -51,8 +52,45 @@ def wait_for_login_sync(page, timeout_ms: int = 30000) -> bool:
     return "/auth/login" not in page.url
 
 
-def _state_is_valid(browser) -> bool:
+def _cached_state_matches_current_env() -> bool:
+    """A cached storage_state is tied to the origin it was captured against
+    (cookies + localStorage are both origin-scoped). Switching `.env`'s
+    BASE_URL to a different environment (Staging/RC/Live) without deleting
+    `.auth/state.json` used to produce a confusing failure mode: the stale
+    cache would load into a context fine, `_state_is_valid()`'s own probe
+    would often still pass (the app doesn't always land cleanly back on
+    `/auth/login` for a cross-origin session - it can show a half-rendered
+    state that isn't the login page but also never finishes loading real
+    content), so every single test in the run would then time out deep
+    inside its own first action instead of failing fast with a clear
+    reason. Confirmed live (2026-10-16): a cached RC-origin session was
+    silently reused while `.env` pointed at Live, and every test hung for
+    its full timeout budget before failing. Checking the cached state's own
+    recorded origin against the CURRENT `.env`'s `APP_ORIGIN` up front -
+    before even spending the time to open a browser context and navigate -
+    catches this immediately and makes it self-healing: no need to
+    remember to manually delete `.auth/state.json` after every environment
+    switch."""
     if not AUTH_STATE_PATH.exists():
+        return False
+    try:
+        data = json.loads(AUTH_STATE_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    origins = [o.get("origin") for o in data.get("origins", [])]
+    cookie_domains = {c.get("domain", "").lstrip(".") for c in data.get("cookies", [])}
+    current_host = APP_ORIGIN.split("://")[-1]
+    if APP_ORIGIN in origins:
+        return True
+    if current_host in cookie_domains:
+        return True
+    # No origins/cookies recorded at all (an empty/degenerate state file) -
+    # treat as a mismatch rather than silently trusting it.
+    return False
+
+
+def _state_is_valid(browser) -> bool:
+    if not _cached_state_matches_current_env():
         return False
     context = None
     try:
