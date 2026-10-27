@@ -63,7 +63,9 @@ python run_tests.py --feature Forms             # WTA Forms (top-level)
 python run_tests.py --feature Regulations       # WTA Regulations (top-level)
 python run_tests.py --feature Treaties          # Treaties menu + all 5 sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data)
 python run_tests.py --feature Tools             # Tools menu + Projects + Questionnaire Creator
-python run_tests.py --feature Calculator        # Calculators menu + Corporate Rate Finder, Repatriation Calculator
+python run_tests.py --feature Calculator        # Calculators menu + all 6 sub-pages: Corporate Rate Finder,
+                                                 # Repatriation Calculator, WHT Router, Loss Relief Calculator,
+                                                 # CIT Calculator, Interest And Penalties
 ```
 
 (`--feature` is case-insensitive, matching `run_tests.py`'s own lookup.)
@@ -79,6 +81,12 @@ python run_tests.py --test FullDta_02
 python run_tests.py --test MLIData_03
 python run_tests.py --test Projects_03
 python run_tests.py --test QuestionnaireCreator_05
+python run_tests.py --test CRF_07                 # Corporate Rate Finder
+python run_tests.py --test RepCalc_17              # Repatriation Calculator
+python run_tests.py --test WhtRouter_06            # WHT Router
+python run_tests.py --test LossRelief_06           # Loss Relief Calculator
+python run_tests.py --test CIT_07                  # CIT Calculator
+python run_tests.py --test IAP_06                  # Interest And Penalties
 ```
 
 ## Run Smoke Suite
