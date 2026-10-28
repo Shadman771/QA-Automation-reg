@@ -41,12 +41,13 @@ pass rate is compared against it; no HTML/JS edits required to change it.
 python run_tests.py
 ```
 
-Runs every feature in `FEATURE_PATHS` (Login, Dashboard, and every WTA feature:
-Information, Pillar2, News, Forms, Regulations, Treaties, Tools, Calculator), cleans
-previous screenshots/logs/report first, regenerates the HTML report and per-feature
-Excel files, and prints the report path. Runs headed by default (`HEADLESS=false`
-in `.env`) and opens the live dashboard (`http://127.0.0.1:8787/dashboard.html`)
-automatically - see README.md > "Watching it run".
+Runs every feature in `FEATURE_PATHS` (Login, Dashboard, every WTA feature:
+Information, Pillar2, News, Forms, Regulations, Treaties, Tools, Calculator, and every
+RegBriefings feature: My Briefs, World Tax Brief, Transfer Pricing Brief, Tax Treaty
+Brief, Archive, Preferences), cleans previous screenshots/logs/report first, regenerates
+the HTML report and per-feature Excel files, and prints the report path. Runs headed by
+default (`HEADLESS=false` in `.env`) and opens the live dashboard
+(`http://127.0.0.1:8787/dashboard.html`) automatically - see README.md > "Watching it run".
 
 ## Run One Feature
 
@@ -66,6 +67,16 @@ python run_tests.py --feature Tools             # Tools menu + Projects + Questi
 python run_tests.py --feature Calculator        # Calculators menu + all 6 sub-pages: Corporate Rate Finder,
                                                  # Repatriation Calculator, WHT Router, Loss Relief Calculator,
                                                  # CIT Calculator, Interest And Penalties
+
+python run_tests.py --feature Regbriefings      # EVERY RegBriefings feature at once (the whole parent module,
+                                                 # a sibling of WTA) - the dedicated single command for this module
+
+python run_tests.py --feature Mybriefs                # RegBriefings > My Briefs (landing/dashboard view)
+python run_tests.py --feature Worldtaxbrief            # RegBriefings > World Tax Brief
+python run_tests.py --feature Transferpricingbrief     # RegBriefings > Transfer Pricing Brief
+python run_tests.py --feature Taxtreatybrief           # RegBriefings > Tax Treaty Brief
+python run_tests.py --feature Archive                  # RegBriefings > Archive (year-based past briefs)
+python run_tests.py --feature Preferences              # RegBriefings > Preferences (brief/jurisdiction subscriptions)
 ```
 
 (`--feature` is case-insensitive, matching `run_tests.py`'s own lookup.)
@@ -87,6 +98,12 @@ python run_tests.py --test WhtRouter_06            # WHT Router
 python run_tests.py --test LossRelief_06           # Loss Relief Calculator
 python run_tests.py --test CIT_07                  # CIT Calculator
 python run_tests.py --test IAP_06                  # Interest And Penalties
+python run_tests.py --test MyBriefs_03              # RegBriefings > My Briefs
+python run_tests.py --test WorldTaxBrief_05         # RegBriefings > World Tax Brief
+python run_tests.py --test TransferPricingBrief_05  # RegBriefings > Transfer Pricing Brief
+python run_tests.py --test TaxTreatyBrief_05        # RegBriefings > Tax Treaty Brief
+python run_tests.py --test Archive_05               # RegBriefings > Archive
+python run_tests.py --test Prefs_07                 # RegBriefings > Preferences
 ```
 
 ## Run Smoke Suite
@@ -165,10 +182,16 @@ Evidence" gallery on each test case's report card, in addition to the final full
 **For a platform-level feature** (not part of any product, like Login/Dashboard): the same
 pattern at the top level instead - `pages/`, `tests/<feature>/`, `FEATURE_PATHS` directly.
 
-**For an entirely new parent module** (a product sibling to WTA, e.g. Transfer Pricing
-Analyzer): mirror the WTA shape - `pages/<module>/`, `tests/<module>/<feature>/`,
-`test_data/<MODULE>/<Feature>/` - and register it in `run_tests.py` the same way
-`WTA_FEATURE_PATHS`/the `"wta"` aggregate key are. See `AGENT.md` > "Parent module structure".
+**For an entirely new parent module** (a product sibling to WTA): mirror the WTA shape -
+`pages/<module>/`, `tests/<module>/<feature>/`, `test_data/<Module>/<Feature>/` - and
+register it in `run_tests.py` the same way `WTA_FEATURE_PATHS`/the `"wta"` aggregate key
+are, and in `config/settings.py::OTHER_MODULE_FEATURES` (generalized from the old
+two-way platform/WTA split specifically to support this) so `feature_dir()` nests its
+output under the right module segment. **RegBriefings is a real, built example of this**
+(`pages/regbriefings/`, `tests/regbriefings/<feature>/`, `REGBRIEFINGS_FEATURE_PATHS` +
+the `"regbriefings"` aggregate key in `run_tests.py`, `test_data/RegBriefings/<Feature>/`)
+- follow its exact structure for the next new parent module (e.g. Transfer Pricing
+Analyzer). See `AGENT.md` > "Parent module structure" and `CLAUDE.md` > "RegBriefings".
 
 ## Discovery scripts
 
