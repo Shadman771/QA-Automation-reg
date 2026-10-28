@@ -43,11 +43,25 @@ WTA_FEATURE_PATHS = {
     "calculator": "tests/wta/calculator",
 }
 
+# RegBriefings: a parent module sibling of WTA (see AGENT.md > "Parent
+# module structure") - its own pages/regbriefings/, tests/regbriefings/
+# <feature>/, test_data/REGBRIEFINGS/<Feature>/, same shape as WTA_FEATURE_PATHS.
+REGBRIEFINGS_FEATURE_PATHS = {
+    "mybriefs": "tests/regbriefings/mybriefs",
+    "worldtaxbrief": "tests/regbriefings/worldtaxbrief",
+    "transferpricingbrief": "tests/regbriefings/transferpricingbrief",
+    "taxtreatybrief": "tests/regbriefings/taxtreatybrief",
+    "archive": "tests/regbriefings/archive",
+    "preferences": "tests/regbriefings/preferences",
+}
+
 FEATURE_PATHS = {
     "login": "tests/login",
     "dashboard": "tests/dashboard",
     "wta": "tests/wta",  # every WTA feature at once - the parent module
+    "regbriefings": "tests/regbriefings",  # every RegBriefings feature at once - the parent module
     **WTA_FEATURE_PATHS,
+    **REGBRIEFINGS_FEATURE_PATHS,
 }
 
 

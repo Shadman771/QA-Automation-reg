@@ -63,22 +63,43 @@ LOGS_DIR = PROJECT_ROOT / "logs"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 TEST_DATA_DIR = PROJECT_ROOT / "test_data"
 
-# The only features OUTSIDE the "WTA" parent module - the platform/
-# pre-product shell (login, the post-login landing page's product picker).
-# Every other feature belongs to WTA and nests one level deeper under a
-# "WTA" segment (test_data/WTA/<Feature>/, logs/WTA/<Feature>/,
-# screenshots/PASS|FAIL/WTA/<Feature>/) - mirrors tests/wta/ and
-# pages/wta/. Future parent modules follow the same pattern: add their
-# feature names here (or generalize this into a real module-name lookup)
-# rather than hardcoding a new flat exception list elsewhere.
-NON_WTA_FEATURES = {"Login", "Dashboard"}
+# The only features OUTSIDE any parent module - the platform/pre-product
+# shell (login, the post-login landing page's product picker). These
+# nest directly under base/<Feature>, no module segment.
+PLATFORM_FEATURES = {"Login", "Dashboard"}
+
+# Real module lookup (generalized from the old two-way platform/WTA split,
+# per this file's own prior TODO): every feature belonging to a parent
+# module OTHER than WTA must be listed here under that module's segment
+# name, matching its own tests/<module>/, pages/<module>/ structure. A
+# feature NOT in PLATFORM_FEATURES and NOT listed here defaults to "WTA" -
+# preserves identical behavior for every pre-existing WTA feature without
+# needing to enumerate them all.
+OTHER_MODULE_FEATURES = {
+    "RegBriefings": {
+        "RegBriefings Menu",
+        "RegBriefings My Briefs",
+        "RegBriefings World Tax Brief",
+        "RegBriefings Transfer Pricing Brief",
+        "RegBriefings Tax Treaty Brief",
+        "RegBriefings Archive",
+        "RegBriefings Preferences",
+    },
+}
 
 
 def feature_dir(base: Path, feature: str) -> Path:
-    """base/<Feature> for a platform-level feature, base/WTA/<Feature> for
-    everything else - the one shared rule every feature-keyed output
-    directory (test_data, screenshots, logs) should use."""
-    return base / feature if feature in NON_WTA_FEATURES else base / "WTA" / feature
+    """base/<Feature> for a platform-level feature, base/<Module>/<Feature>
+    for a feature belonging to a registered parent module (see
+    OTHER_MODULE_FEATURES), base/WTA/<Feature> otherwise - the one shared
+    rule every feature-keyed output directory (test_data, screenshots,
+    logs) should use."""
+    if feature in PLATFORM_FEATURES:
+        return base / feature
+    for module_name, features in OTHER_MODULE_FEATURES.items():
+        if feature in features:
+            return base / module_name / feature
+    return base / "WTA" / feature
 
 if not BASE_URL or not LOGIN_EMAIL or not LOGIN_PASSWORD:
     raise RuntimeError(
