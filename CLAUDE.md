@@ -114,9 +114,16 @@ Full command reference: [ALL_COMMANDS.md](ALL_COMMANDS.md). The essentials:
 ```bash
 python run_tests.py                     # full suite (the standard way to run this project)
 python run_tests.py --feature login     # platform-level: login, dashboard
-python run_tests.py --feature wta       # every WTA feature at once (the whole parent module)
-python run_tests.py --feature calculator  # one WTA feature only - also: information, pillar2,
+python run_tests.py --feature wta       # EVERY WTA feature at once (the whole parent module) - nothing
+                                         # from RegBriefings; the dedicated "run only this parent
+                                         # feature" command, confirmed via --collect-only to pick up
+                                         # exactly its own module's tests
+python run_tests.py --feature regbriefings  # EVERY RegBriefings feature at once (the whole parent
+                                             # module) - nothing from WTA; same dedicated-command pattern
+python run_tests.py --feature calculator  # one WTA sub-feature only - also: information, pillar2,
                                            # news, forms, regulations, treaties, tools
+python run_tests.py --feature worldtaxbrief  # one RegBriefings sub-feature only - also: mybriefs,
+                                              # transferpricingbrief, taxtreatybrief, archive, preferences
 python run_tests.py --test LOGIN_05     # one specific Test Case ID
 python run_tests.py --smoke             # @pytest.mark.smoke only
 python run_tests.py --regression        # @pytest.mark.regression only

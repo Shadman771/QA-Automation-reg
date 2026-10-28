@@ -49,13 +49,39 @@ the HTML report and per-feature Excel files, and prints the report path. Runs he
 default (`HEADLESS=false` in `.env`) and opens the live dashboard
 (`http://127.0.0.1:8787/dashboard.html`) automatically - see README.md > "Watching it run".
 
-## Run One Feature
+## Run an Entire Parent Module Only (WTA or RegBriefings)
+
+**The dedicated command for "run only this parent feature and all its sub-features, nothing
+from any other parent feature."** Each of these maps straight to that module's own test
+directory (`tests/wta` / `tests/regbriefings`) - confirmed live via `--collect-only` that
+each one picks up exactly its own module's tests and nothing else (249 for WTA, 50 for
+RegBriefings as of this writing, zero overlap):
 
 ```bash
-python run_tests.py --feature Login             # platform-level (outside the WTA parent module)
-python run_tests.py --feature Dashboard         # platform-level
+python run_tests.py --feature Wta               # EVERY WTA feature at once (Information, Pillar2, News, Forms,
+                                                 # Regulations, Treaties, Tools, Calculator) - nothing from RegBriefings
 
-python run_tests.py --feature Wta               # EVERY WTA feature at once (the whole parent module)
+python run_tests.py --feature Regbriefings      # EVERY RegBriefings feature at once (My Briefs, World Tax Brief,
+                                                 # Transfer Pricing Brief, Tax Treaty Brief, Archive, Preferences) -
+                                                 # nothing from WTA
+```
+
+Verify the isolation yourself at any time with:
+
+```bash
+python -m pytest tests/wta --collect-only -q          # only WTA tests
+python -m pytest tests/regbriefings --collect-only -q  # only RegBriefings tests
+```
+
+For an entirely new parent module added later (see "Adding a Feature" below), the same
+`--feature <modulename>` aggregate-key pattern applies automatically once it's registered
+in `run_tests.py`'s `FEATURE_PATHS`.
+
+## Run One Feature (a single sub-feature within a parent module, or a platform-level feature)
+
+```bash
+python run_tests.py --feature Login             # platform-level (outside any parent module)
+python run_tests.py --feature Dashboard         # platform-level
 
 python run_tests.py --feature Information       # WTA Information workspace
 python run_tests.py --feature Pillar2           # Pillar 2 menu + all 6 sub-pages
@@ -67,9 +93,6 @@ python run_tests.py --feature Tools             # Tools menu + Projects + Questi
 python run_tests.py --feature Calculator        # Calculators menu + all 6 sub-pages: Corporate Rate Finder,
                                                  # Repatriation Calculator, WHT Router, Loss Relief Calculator,
                                                  # CIT Calculator, Interest And Penalties
-
-python run_tests.py --feature Regbriefings      # EVERY RegBriefings feature at once (the whole parent module,
-                                                 # a sibling of WTA) - the dedicated single command for this module
 
 python run_tests.py --feature Mybriefs                # RegBriefings > My Briefs (landing/dashboard view)
 python run_tests.py --feature Worldtaxbrief            # RegBriefings > World Tax Brief
