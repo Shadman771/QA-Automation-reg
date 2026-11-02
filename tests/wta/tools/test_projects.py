@@ -29,6 +29,15 @@ FEATURE = "Tools Projects"
 PROJECT_API = "https://regpluswta.api.kaz.com.bd/api/Project"
 
 
+def _hits_project_endpoint(url: str, action: str) -> bool:
+    """The API hostname itself differs per environment (confirmed live:
+    RC serves this from `regplusrcwtaapi.reganalytics.com`, not the
+    Staging host baked into `PROJECT_API` above, which exists only for
+    human-readable descriptions) - so endpoint checks match on the
+    stable `/api/Project/<action>` path, not a hardcoded origin."""
+    return f"/api/Project/{action}" in url
+
+
 def _unique_title(tag: str) -> str:
     return f"ToolsQA_{tag}_{int(time.time() * 1000)}"
 
@@ -326,7 +335,7 @@ def test_projects_07_create_network_request_and_response(page, result):
 
     case.step(4, "Verify method, endpoint, status 200 and response body shape")
     method_ok = response.request.method == "POST"
-    endpoint_ok = f"{PROJECT_API}/CreateProject" in response.url
+    endpoint_ok = _hits_project_endpoint(response.url, "CreateProject")
     status_ok = response.status == 200
     body_ok = body.get("hasError") is False and isinstance(body.get("id"), int) and body.get("id") > 0
     request_payload = response.request.post_data_json or {}
@@ -388,7 +397,7 @@ def test_projects_08_rename_network_request_and_response(page, result):
 
     case.step(4, "Verify method, endpoint, status 200 and response body shape")
     method_ok = setup_ok and response.request.method == "POST"
-    endpoint_ok = setup_ok and f"{PROJECT_API}/RenameProject" in response.url
+    endpoint_ok = setup_ok and _hits_project_endpoint(response.url, "RenameProject")
     status_ok = setup_ok and response.status == 200
     body_ok = setup_ok and body.get("hasError") is False and isinstance(body.get("id"), int)
     payload_ok = setup_ok and request_payload.get("name") == renamed
@@ -455,7 +464,14 @@ def test_projects_09_delete_network_request_and_authoritative_removal(page, resu
     case.step(4, "Verify status 200 and the project's real absence from GetProjects")
     method_ok = setup_ok and delete_response.request.method == "POST"
     status_ok = setup_ok and delete_response.status == 200
-    removed_ok = setup_ok and not any(p.get("name") == title for p in projects_after)
+    # The GetProjects response's item shape differs per environment (confirmed
+    # live: RC returns a flat list of name strings, not the list of
+    # {"name": ...} dicts another environment can return) - compare by
+    # whichever shape each entry actually is rather than assuming one.
+    def _entry_name(p):
+        return p.get("name") if isinstance(p, dict) else p
+
+    removed_ok = setup_ok and not any(_entry_name(p) == title for p in projects_after)
     is_success_reported = delete_response.json().get("isSuccess") if setup_ok else None
 
     ok = setup_ok and method_ok and status_ok and removed_ok

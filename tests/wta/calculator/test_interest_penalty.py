@@ -9,6 +9,8 @@ real, live-confirmed application crash (typing a comma into either date
 field) without triggering it in every run - see the page object's
 `pick_date()` for the safe calendar-click alternative actually used
 throughout."""
+from datetime import date
+
 import pytest
 
 from pages.wta.calculator_menu import CalculatorMenu
@@ -17,6 +19,22 @@ from utils.auth import perform_login
 from utils.case import Case
 
 FEATURE = "WTA Calculator - Interest And Penalties"
+
+
+def _overdue_date_pair():
+    """Day 1 and day 11 of the CURRENT real-world month (not a hardcoded
+    calendar date) - confirmed live that a hardcoded past date (e.g. a date
+    from a month that has since elapsed) times out `pick_date()`, because
+    the rsuite calendar opens on the current month by default and these
+    tests never navigate it - so every month this test runs in is, by
+    construction, "the current month", keeping both days in the
+    already-displayed page with no navigation needed, while still
+    preserving the real 10-day gap the calculation anchor depends on."""
+    today = date.today()
+    first = date(today.year, today.month, 1)
+    second = date(today.year, today.month, 11)
+    month_abbr = first.strftime("%b")
+    return first.day, second.day, month_abbr, first.year, first, second
 
 
 def _login_and_open(case, page):
@@ -187,39 +205,43 @@ def test_iap_05_bd_2023_lists_late_payment_offence(page, result):
 
 @pytest.mark.smoke
 def test_iap_06_calculation_matches_independent_arithmetic(page, result):
+    day1, day2, month_abbr, year, final_due_date, overdue_paid_date = _overdue_date_pair()
     case = Case(
         page, "IAP_06", FEATURE, "Total days overdue/penalty/interest match an independent calculation",
-        description="With Bangladesh/2023-2024, 'Late payment' offence, Tax due=1,000, Final tax due date="
-                     "01 Oct 2026, Overdue tax paid=11 Oct 2026: Total days overdue must be 10 (simple "
-                     "calendar day difference), and Total penalty amount/Total interest and penalty must "
-                     "both equal 1,000,000 = PenaltyPerDay(100,000) x 10 days - independently recomputed "
-                     "in Python from the known PenaltyPerDay, not compared to the UI itself.",
+        description=f"With Bangladesh/2023-2024, 'Late payment' offence, Tax due=1,000, Final tax due date="
+                     f"{day1:02d} {month_abbr} {year}, Overdue tax paid={day2:02d} {month_abbr} {year}: Total "
+                     f"days overdue must be 10 (simple calendar day difference), and Total penalty amount/"
+                     f"Total interest and penalty must both equal 1,000,000 = PenaltyPerDay(100,000) x 10 days "
+                     f"- independently recomputed in Python from the known PenaltyPerDay, not compared to the "
+                     f"UI itself. The two dates are always the 1st/11th of the current real-world month (not "
+                     f"a fixed calendar date) so the test never asks the live calendar to show an elapsed month.",
         precondition="User is logged in.",
-        test_data="Bangladesh/2023-2024, Late payment, Tax due=1000, "
-                  "01 Oct 2026 -> 11 Oct 2026",
-        steps="1. Log in, open Interest And Penalties, select Bangladesh/2023-2024/Late payment\n"
-              "2. Enter Tax due=1000, Final tax due date=01 Oct 2026, Overdue tax paid=11 Oct 2026\n"
-              "3. Independently compute the expected days/penalty\n"
-              "4. Verify all 3 computed fields match",
+        test_data=f"Bangladesh/2023-2024, Late payment, Tax due=1000, "
+                  f"{day1:02d} {month_abbr} {year} -> {day2:02d} {month_abbr} {year}",
+        steps=f"1. Log in, open Interest And Penalties, select Bangladesh/2023-2024/Late payment\n"
+              f"2. Enter Tax due=1000, Final tax due date={day1:02d} {month_abbr} {year}, "
+              f"Overdue tax paid={day2:02d} {month_abbr} {year}\n"
+              f"3. Independently compute the expected days/penalty\n"
+              f"4. Verify all 3 computed fields match",
     )
     iap = _login_and_open(case, page)
     _select_bd_2023_late_payment(case, page, iap)
 
-    case.step(2, "Enter Tax due=1000, Final tax due date=01 Oct 2026, Overdue tax paid=11 Oct 2026")
+    case.step(2, f"Enter Tax due=1000, Final tax due date={day1:02d} {month_abbr} {year}, "
+                 f"Overdue tax paid={day2:02d} {month_abbr} {year}")
     tax_due = iap.tax_due_input()
     case.click(tax_due, "'Tax due (amount)' field")
     tax_due.press_sequentially("1000", delay=15)
     tax_due.press("Tab")
     page.wait_for_timeout(500)
-    case.action("Picking Final tax due date = 01 Oct 2026 via the calendar", kind="click")
-    iap.pick_date(iap.final_tax_due_date_input(), 1, "Oct", 2026)
-    case.action("Picking Overdue tax paid = 11 Oct 2026 via the calendar", kind="click")
-    iap.pick_date(iap.overdue_tax_paid_input(), 11, "Oct", 2026)
+    case.action(f"Picking Final tax due date = {day1:02d} {month_abbr} {year} via the calendar", kind="click")
+    iap.pick_date(iap.final_tax_due_date_input(), day1, month_abbr, year)
+    case.action(f"Picking Overdue tax paid = {day2:02d} {month_abbr} {year} via the calendar", kind="click")
+    iap.pick_date(iap.overdue_tax_paid_input(), day2, month_abbr, year)
     page.wait_for_timeout(1000)
 
     case.step(3, "Independently compute the expected days/penalty")
-    from datetime import date
-    days_overdue = (date(2026, 10, 11) - date(2026, 10, 1)).days
+    days_overdue = (overdue_paid_date - final_due_date).days
     penalty_per_day = 100000
     expected_penalty = penalty_per_day * days_overdue
 
@@ -299,10 +321,12 @@ def test_iap_08_payment_type_radios_present(page, result):
 
 @pytest.mark.regression
 def test_iap_09_action_buttons_enabled_after_calculation(page, result):
+    day1, day2, month_abbr, year, _, _ = _overdue_date_pair()
     case = Case(
         page, "IAP_09", FEATURE, "Generate Memo/Get Forms/Add to Project become enabled once the calculation completes",
-        description="After a successful Bangladesh/2023-2024/Late payment/1,000/01-11 Oct 2026 calculation, "
-                     "the 3 action buttons must become enabled.",
+        description=f"After a successful Bangladesh/2023-2024/Late payment/1,000/{day1:02d}-{day2:02d} "
+                     f"{month_abbr} {year} calculation, the 3 action buttons must become enabled. The two "
+                     f"dates are always the 1st/11th of the current real-world month, not a fixed calendar date.",
         precondition="User is logged in, full calculation completed.",
         test_data="-",
         steps="1. Log in, open Interest And Penalties, complete a full calculation\n"
@@ -315,8 +339,8 @@ def test_iap_09_action_buttons_enabled_after_calculation(page, result):
     tax_due.press_sequentially("1000", delay=15)
     tax_due.press("Tab")
     page.wait_for_timeout(500)
-    iap.pick_date(iap.final_tax_due_date_input(), 1, "Oct", 2026)
-    iap.pick_date(iap.overdue_tax_paid_input(), 11, "Oct", 2026)
+    iap.pick_date(iap.final_tax_due_date_input(), day1, month_abbr, year)
+    iap.pick_date(iap.overdue_tax_paid_input(), day2, month_abbr, year)
     page.wait_for_timeout(1000)
 
     case.step(2, "Verify the 3 action buttons are enabled")
