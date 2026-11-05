@@ -42,28 +42,32 @@ python run_tests.py
 ```
 
 Runs every feature in `FEATURE_PATHS` (Login, Dashboard, every WTA feature:
-Information, Pillar2, News, Forms, Regulations, Treaties, Tools, Calculator, and every
+Information, Pillar2, News, Forms, Regulations, Treaties, Tools, Calculator, every
 RegBriefings feature: My Briefs, World Tax Brief, Transfer Pricing Brief, Tax Treaty
-Brief, Archive, Preferences), cleans previous screenshots/logs/report first, regenerates
+Brief, Archive, Preferences, and every TPA feature: Home, National Rules, International
+Guidelines, News, Forms, Regulations, Case Law), cleans previous screenshots/logs/report first, regenerates
 the HTML report and per-feature Excel files, and prints the report path. Runs headed by
 default (`HEADLESS=false` in `.env`) and opens the live dashboard
 (`http://127.0.0.1:8787/dashboard.html`) automatically - see README.md > "Watching it run".
 
-## Run an Entire Parent Module Only (WTA or RegBriefings)
+## Run an Entire Parent Module Only (WTA, RegBriefings, or TPA)
 
 **The dedicated command for "run only this parent feature and all its sub-features, nothing
 from any other parent feature."** Each of these maps straight to that module's own test
-directory (`tests/wta` / `tests/regbriefings`) - confirmed live via `--collect-only` that
+directory (`tests/wta` / `tests/regbriefings` / `tests/tpa`) - confirmed live via `--collect-only` that
 each one picks up exactly its own module's tests and nothing else (249 for WTA, 50 for
-RegBriefings as of this writing, zero overlap):
+RegBriefings, 58 for TPA as of this writing, zero overlap):
 
 ```bash
 python run_tests.py --feature Wta               # EVERY WTA feature at once (Information, Pillar2, News, Forms,
-                                                 # Regulations, Treaties, Tools, Calculator) - nothing from RegBriefings
+                                                 # Regulations, Treaties, Tools, Calculator) - nothing from RegBriefings/TPA
 
 python run_tests.py --feature Regbriefings      # EVERY RegBriefings feature at once (My Briefs, World Tax Brief,
                                                  # Transfer Pricing Brief, Tax Treaty Brief, Archive, Preferences) -
-                                                 # nothing from WTA
+                                                 # nothing from WTA/TPA
+
+python run_tests.py --feature Tpa               # EVERY TPA feature at once (Home, National Rules, International
+                                                 # Guidelines, News, Forms, Regulations, Case Law) - nothing from WTA/RegBriefings
 ```
 
 Verify the isolation yourself at any time with:
@@ -71,6 +75,7 @@ Verify the isolation yourself at any time with:
 ```bash
 python -m pytest tests/wta --collect-only -q          # only WTA tests
 python -m pytest tests/regbriefings --collect-only -q  # only RegBriefings tests
+python -m pytest tests/tpa --collect-only -q           # only TPA tests
 ```
 
 For an entirely new parent module added later (see "Adding a Feature" below), the same
@@ -100,6 +105,17 @@ python run_tests.py --feature Transferpricingbrief     # RegBriefings > Transfer
 python run_tests.py --feature Taxtreatybrief           # RegBriefings > Tax Treaty Brief
 python run_tests.py --feature Archive                  # RegBriefings > Archive (year-based past briefs)
 python run_tests.py --feature Preferences              # RegBriefings > Preferences (brief/jurisdiction subscriptions)
+
+python run_tests.py --feature Tpahome                   # TPA > Home
+python run_tests.py --feature Nationalrules              # TPA > Information > National Rules
+python run_tests.py --feature Internationalguidelines    # TPA > Information > International Guidelines
+python run_tests.py --feature Tpanews                     # TPA > News
+python run_tests.py --feature Tpaforms                    # TPA > Forms
+python run_tests.py --feature Tparegulations               # TPA > Regulations
+python run_tests.py --feature Caselaw                       # TPA > Case Law
+python run_tests.py --feature Tpatreaties                   # TPA > Treaties (TP Articles) - note: TPA has no
+                                                              # Calculator feature at all (confirmed absent on
+                                                              # RC/Staging/Live), so there is no --feature for it
 ```
 
 (`--feature` is case-insensitive, matching `run_tests.py`'s own lookup.)
@@ -127,6 +143,14 @@ python run_tests.py --test TransferPricingBrief_05  # RegBriefings > Transfer Pr
 python run_tests.py --test TaxTreatyBrief_05        # RegBriefings > Tax Treaty Brief
 python run_tests.py --test Archive_05               # RegBriefings > Archive
 python run_tests.py --test Prefs_07                 # RegBriefings > Preferences
+python run_tests.py --test TpaHome_03                # TPA > Home
+python run_tests.py --test NationalRules_07          # TPA > National Rules
+python run_tests.py --test InternationalGuidelines_03 # TPA > International Guidelines
+python run_tests.py --test TpaNews_05                 # TPA > News
+python run_tests.py --test TpaForms_04                # TPA > Forms
+python run_tests.py --test TpaRegulations_06           # TPA > Regulations
+python run_tests.py --test CaseLaw_06                   # TPA > Case Law
+python run_tests.py --test TpaTreaties_02                # TPA > Treaties (TP Articles)
 ```
 
 ## Run Smoke Suite
@@ -210,11 +234,12 @@ pattern at the top level instead - `pages/`, `tests/<feature>/`, `FEATURE_PATHS`
 register it in `run_tests.py` the same way `WTA_FEATURE_PATHS`/the `"wta"` aggregate key
 are, and in `config/settings.py::OTHER_MODULE_FEATURES` (generalized from the old
 two-way platform/WTA split specifically to support this) so `feature_dir()` nests its
-output under the right module segment. **RegBriefings is a real, built example of this**
-(`pages/regbriefings/`, `tests/regbriefings/<feature>/`, `REGBRIEFINGS_FEATURE_PATHS` +
-the `"regbriefings"` aggregate key in `run_tests.py`, `test_data/RegBriefings/<Feature>/`)
-- follow its exact structure for the next new parent module (e.g. Transfer Pricing
-Analyzer). See `AGENT.md` > "Parent module structure" and `CLAUDE.md` > "RegBriefings".
+output under the right module segment. **RegBriefings and TPA are both real, built
+examples of this** (`pages/regbriefings/` + `REGBRIEFINGS_FEATURE_PATHS`/`"regbriefings"`;
+`pages/tpa/` + `TPA_FEATURE_PATHS`/`"tpa"`, both in `run_tests.py`, with
+`test_data/RegBriefings/<Feature>/` and `test_data/TPA/<Feature>/` respectively) -
+follow their exact structure for the next new parent module. See `AGENT.md` >
+"Parent module structure" and `CLAUDE.md` > "RegBriefings" / "TPA".
 
 ## Discovery scripts
 

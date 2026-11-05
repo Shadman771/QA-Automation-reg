@@ -55,13 +55,29 @@ REGBRIEFINGS_FEATURE_PATHS = {
     "preferences": "tests/regbriefings/preferences",
 }
 
+# TPA (Transfer Pricing Analyzer): a parent module sibling of WTA/RegBriefings
+# (see AGENT.md > "Parent module structure") - pages/tpa/, tests/tpa/
+# <feature>/, test_data/TPA/<Feature>/, same shape as the other two.
+TPA_FEATURE_PATHS = {
+    "tpahome": "tests/tpa/home",
+    "nationalrules": "tests/tpa/nationalrules",
+    "internationalguidelines": "tests/tpa/internationalguidelines",
+    "tpanews": "tests/tpa/news",
+    "tpaforms": "tests/tpa/forms",
+    "tparegulations": "tests/tpa/regulations",
+    "caselaw": "tests/tpa/caselaw",
+    "tpatreaties": "tests/tpa/treaties",
+}
+
 FEATURE_PATHS = {
     "login": "tests/login",
     "dashboard": "tests/dashboard",
     "wta": "tests/wta",  # every WTA feature at once - the parent module
     "regbriefings": "tests/regbriefings",  # every RegBriefings feature at once - the parent module
+    "tpa": "tests/tpa",  # every TPA feature at once - the parent module
     **WTA_FEATURE_PATHS,
     **REGBRIEFINGS_FEATURE_PATHS,
+    **TPA_FEATURE_PATHS,
 }
 
 

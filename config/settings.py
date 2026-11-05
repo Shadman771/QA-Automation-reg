@@ -85,6 +85,16 @@ OTHER_MODULE_FEATURES = {
         "RegBriefings Archive",
         "RegBriefings Preferences",
     },
+    "TPA": {
+        "TPA Home",
+        "TPA National Rules",
+        "TPA International Guidelines",
+        "TPA News",
+        "TPA Forms",
+        "TPA Regulations",
+        "TPA Case Law",
+        "TPA Treaties",
+    },
 }
 
 
