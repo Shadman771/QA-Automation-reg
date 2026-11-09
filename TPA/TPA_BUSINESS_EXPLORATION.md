@@ -33,7 +33,11 @@ per-directory `browser_context_args` override is needed for TPA tests.
 | TPA | Regulations | `/tpa/Regulations` | Jurisdiction (country) only | Explored |
 | TPA | Case Law | `/tpa/CaseLaw` | Jurisdiction (country) + Category tree | Explored |
 | TPA | Treaties | `/tpa/...` (unconfirmed) | unknown | Out of scope — not explored |
-| TPA | Commentary | `/tpa/...` (unconfirmed) | unknown | Out of scope — not explored |
+| TPA | Commentary | `/tpa/Commentary` | Jurisdiction (country) only | Explored, built (7 tests) |
+| TPA | Tools > Templates | `/tpa/Templates` | none (document table) | Explored, built (7 tests) |
+| TPA | Tools > Analyzer | `/tpa/DecisionFlows` | none (analysis list) | Explored, built (7 tests) |
+| TPA | Tools > Projects | `/tpa/Project` | none (project list) | Explored, built (7 tests) |
+| TPA | Tools > FAR Questionnaire | `/tpa/FARQuestionnaireCreator` | none (questionnaire table) | Explored, built (6 tests) |
 
 ## Reusable components (confirmed, no changes needed)
 
@@ -223,6 +227,56 @@ full rather than inventing the assumed shape:
   was built for TPA. (WTA's own, pre-existing 6-sub-feature Calculator
   module at `pages/wta/calculator_*.py` / `tests/wta/calculator/` is
   untouched and remains the only Calculator automation in this project.)
+
+## Commentary and Tools — exploration and build (later round, Commentary + Tools only)
+
+A later, separately-scoped request asked for exactly two more TPA parent features: **Commentary** and
+**Tools**, with every other existing TPA/WTA module explicitly protected from any change. Explored live
+against RC first, per the same standing rule as every other round in this project (never assume business
+rules or that a feature mirrors another module's shape).
+
+**Commentary** (`/tpa/Commentary`): a direct `<a href="/tpa/Commentary">` link inside the "more" overflow
+menu - NOT a submenu toggle like Treaties/Tools/BEPS, confirmed via the same full nav HTML dump used for
+Treaties' own exploration. `JurisdictionPanel`-only; selecting a country renders a "Commentary on
+`<Country>`" heading, a "last updated `<date>`" line, an asynchronously-rendered "`<N>` news since the
+update" button (opens a "Related News" modal closed via its own "OK" button - confirmed live Escape does
+NOT close it), an "Export" control, and a long lettered-section article body. See
+`pages/tpa/tpa_commentary_page.py` and `CLAUDE.md` > "TPA" for the full gotcha writeup (sibling-text-node
+heading split, async news-button race, embedded-table false positive).
+
+**Tools**: confirmed, via the same nav dump, to be a submenu toggle (same shape as Treaties/BEPS) inside
+the "more" menu, holding exactly 4 real children - Templates (`/tpa/Templates`), Analyzer
+(`/tpa/DecisionFlows` - the submenu label and the route intentionally differ), Projects (`/tpa/Project`),
+FAR Questionnaire (`/tpa/FARQuestionnaireCreator`) - a materially larger menu than WTA's own 2-item Tools
+dropdown. **Real, confirmed difference from WTA's own Tools pages**: all 4 of these support a direct
+full-page deep link (unlike WTA's Projects/Questionnaire Creator, which redirect to `/wta/Information`).
+
+Each of the 4 Tools sub-pages has its own real shape, not a shared template:
+- **Templates**: a sortable document table with a 6-action per-row kebab menu (Preview/Clone
+  Document/Edit Document/Delete Document/Export to Word/Export to PDF) and a 5-template picker modal for
+  "Create Document".
+- **Analyzer**: an analysis list with hover-only Edit/Delete links, a "Create Analysis" modal with a By
+  Jurisdiction/By Entity mode pair and 2 required rsuite "Tax Residence" country pickers. Confirmed live:
+  `Save` is not disabled for an empty form - it shows real inline required-field errors instead; the
+  "Analysis name" field's placeholder is cased differently between "Create Analysis" (`"Analysis name"`)
+  and "Edit Analysis" (`"Analysis Name"`).
+- **Projects**: a different, richer DOM shape from WTA's own `/wta/Project` - hover-only Export/Edit/Delete
+  links (confirmed via a full row HTML dump, correcting an initial mis-read based on `is_visible()` not
+  accounting for CSS `opacity`), and a 3-tab (Regulatory Reports/Research/Documents) detail pane per
+  project.
+- **FAR Questionnaire**: an AI-driven "Add FAR Questionnaire" flow (Title + SIC Code required, optional
+  file attachments, "Create & Generate" starts disabled and enables once both required fields are filled),
+  with the same 5-action kebab-menu shape as Templates' own rows.
+
+Full per-page gotcha writeups (async table-load races on Templates/Projects/FAR Questionnaire, the
+Analyzer placeholder-casing bug, the Commentary news-button/modal races) live in `CLAUDE.md` > "TPA" rather
+than being duplicated here. Built: `pages/tpa/tpa_commentary_page.py`, `pages/tpa/tpa_tools_common.py`,
+`pages/tpa/tpa_tools_templates_page.py`, `pages/tpa/tpa_tools_analyzer_page.py`,
+`pages/tpa/tpa_tools_projects_page.py`, `pages/tpa/tpa_tools_far_questionnaire_page.py`, plus
+`tests/tpa/commentary/` (7 tests) and `tests/tpa/tools/` (33 tests: 6 navigation + 7 Templates + 7
+Analyzer + 7 Projects + 6 FAR Questionnaire) - 40 new tests, all passing on RC as of this round. Every
+existing TPA/WTA module (Home, National Rules, International Guidelines, News, Forms, Regulations, Case
+Law, Treaties, and all of WTA) was left untouched, per this round's explicit scope restriction.
 
 ## Outstanding exploration gaps (to close during build, not before)
 

@@ -78,6 +78,19 @@ class TpaNav:
         navigation)."""
         return self.page.locator("div.rs-dropdown-item-toggle").filter(has_text="Treaties")
 
+    def commentary_link(self):
+        """Unlike "Treaties"/"Tools"/"BEPS", the "more" menu's "Commentary"
+        row is a DIRECT link (`<a href="/tpa/Commentary">`), not a submenu
+        toggle - confirmed live via a full nav HTML dump (see
+        pages/tpa/tpa_commentary_page.py)."""
+        return self.page.get_by_role("link", name="Commentary", exact=True)
+
+    def tools_submenu_toggle(self):
+        """The "Tools" row inside the "more" menu - a submenu TOGGLE (same
+        shape as "Treaties"/"BEPS", confirmed live via the same nav HTML
+        dump), holding 4 real children - see pages/tpa/tpa_tools_common.py."""
+        return self.page.locator("div.rs-dropdown-item-toggle").filter(has_text="Tools")
+
 
 def tpa_goto(page: Page, route: str):
     """route e.g. "/tpa/Home" - every TPA page supports a direct deep

@@ -56,7 +56,7 @@ default (`HEADLESS=false` in `.env`) and opens the live dashboard
 from any other parent feature."** Each of these maps straight to that module's own test
 directory (`tests/wta` / `tests/regbriefings` / `tests/tpa`) - confirmed live via `--collect-only` that
 each one picks up exactly its own module's tests and nothing else (249 for WTA, 50 for
-RegBriefings, 58 for TPA as of this writing, zero overlap):
+RegBriefings, 105 for TPA as of this writing, zero overlap):
 
 ```bash
 python run_tests.py --feature Wta               # EVERY WTA feature at once (Information, Pillar2, News, Forms,
@@ -116,6 +116,9 @@ python run_tests.py --feature Caselaw                       # TPA > Case Law
 python run_tests.py --feature Tpatreaties                   # TPA > Treaties (TP Articles) - note: TPA has no
                                                               # Calculator feature at all (confirmed absent on
                                                               # RC/Staging/Live), so there is no --feature for it
+python run_tests.py --feature Tpacommentary                  # TPA > Commentary
+python run_tests.py --feature Tpatools                        # TPA > Tools (nav + all 4 real sub-pages:
+                                                                # Templates, Analyzer, Projects, FAR Questionnaire)
 ```
 
 (`--feature` is case-insensitive, matching `run_tests.py`'s own lookup.)
@@ -151,6 +154,12 @@ python run_tests.py --test TpaForms_04                # TPA > Forms
 python run_tests.py --test TpaRegulations_06           # TPA > Regulations
 python run_tests.py --test CaseLaw_06                   # TPA > Case Law
 python run_tests.py --test TpaTreaties_02                # TPA > Treaties (TP Articles)
+python run_tests.py --test TpaCommentary_03                # TPA > Commentary
+python run_tests.py --test TpaToolsNav_02                   # TPA > Tools navigation ("more" menu/submenu)
+python run_tests.py --test TpaTemplates_04                  # TPA > Tools > Templates
+python run_tests.py --test TpaAnalyzer_06                   # TPA > Tools > Analyzer
+python run_tests.py --test TpaProjects_04                   # TPA > Tools > Projects
+python run_tests.py --test TpaFar_06                         # TPA > Tools > FAR Questionnaire
 ```
 
 ## Run Smoke Suite

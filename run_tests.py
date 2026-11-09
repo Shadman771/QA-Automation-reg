@@ -67,6 +67,8 @@ TPA_FEATURE_PATHS = {
     "tparegulations": "tests/tpa/regulations",
     "caselaw": "tests/tpa/caselaw",
     "tpatreaties": "tests/tpa/treaties",
+    "tpacommentary": "tests/tpa/commentary",
+    "tpatools": "tests/tpa/tools",
 }
 
 FEATURE_PATHS = {

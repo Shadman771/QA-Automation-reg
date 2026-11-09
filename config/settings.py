@@ -94,6 +94,12 @@ OTHER_MODULE_FEATURES = {
         "TPA Regulations",
         "TPA Case Law",
         "TPA Treaties",
+        "TPA Commentary",
+        "TPA Tools Navigation",
+        "TPA Tools Templates",
+        "TPA Tools Analyzer",
+        "TPA Tools Projects",
+        "TPA Tools FAR Questionnaire",
     },
 }
 
