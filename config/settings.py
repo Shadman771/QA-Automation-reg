@@ -100,6 +100,8 @@ OTHER_MODULE_FEATURES = {
         "TPA Tools Analyzer",
         "TPA Tools Projects",
         "TPA Tools FAR Questionnaire",
+        "TPA BEPS Questionnaire",
+        "TPA BEPS Mapper",
     },
 }
 

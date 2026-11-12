@@ -69,7 +69,12 @@ TPA_FEATURE_PATHS = {
     "tpatreaties": "tests/tpa/treaties",
     "tpacommentary": "tests/tpa/commentary",
     "tpatools": "tests/tpa/tools",
+    "tpabeps": "tests/tpa/beps",  # both BEPS sub-features at once
+    "bepsquestionnaire": "tests/tpa/beps/test_tpa_beps_questionnaire.py",
+    "bepsmapper": "tests/tpa/beps/test_tpa_beps_mapper.py",
 }
+# BEPS Questionnaire/Mapper are the newest TPA sub-features, added
+# additively above without touching any existing TPA_FEATURE_PATHS entry.
 
 FEATURE_PATHS = {
     "login": "tests/login",

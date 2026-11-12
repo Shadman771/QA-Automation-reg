@@ -119,6 +119,10 @@ python run_tests.py --feature Tpatreaties                   # TPA > Treaties (TP
 python run_tests.py --feature Tpacommentary                  # TPA > Commentary
 python run_tests.py --feature Tpatools                        # TPA > Tools (nav + all 4 real sub-pages:
                                                                 # Templates, Analyzer, Projects, FAR Questionnaire)
+python run_tests.py --feature Tpabeps                           # TPA > BEPS - both real sub-pages at once:
+                                                                  # BEPS Questionnaire, BEPS Mapper
+python run_tests.py --feature Bepsquestionnaire                 # TPA > BEPS > BEPS Questionnaire only
+python run_tests.py --feature Bepsmapper                        # TPA > BEPS > BEPS Mapper only
 ```
 
 (`--feature` is case-insensitive, matching `run_tests.py`'s own lookup.)
@@ -154,6 +158,8 @@ python run_tests.py --test TpaForms_04                # TPA > Forms
 python run_tests.py --test TpaRegulations_06           # TPA > Regulations
 python run_tests.py --test CaseLaw_06                   # TPA > Case Law
 python run_tests.py --test TpaTreaties_02                # TPA > Treaties (TP Articles)
+python run_tests.py --test BepsQuestionnaire_05            # TPA > BEPS > BEPS Questionnaire
+python run_tests.py --test BepsMapper_03                    # TPA > BEPS > BEPS Mapper
 python run_tests.py --test TpaCommentary_03                # TPA > Commentary
 python run_tests.py --test TpaToolsNav_02                   # TPA > Tools navigation ("more" menu/submenu)
 python run_tests.py --test TpaTemplates_04                  # TPA > Tools > Templates
