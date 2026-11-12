@@ -9,9 +9,10 @@ used to gain tax advantages?" (confirmed live to be a single, unique, always
 arrangements").
 
 Every insert below goes through `_insert_fixture_question()`, which expands
-the question's own sub-topic row first when needed - confirmed live that the
-leaf is genuinely not visible (and not force-clickable either) until that
-parent row is expanded. See
+the question's own sub-topic row first when (and only when) that row is
+genuinely collapsed - decided from the row's real DOM state, not from the
+toggle icon's class (a constant) and not from a visibility probe taken while
+the tree is still rendering. See
 `pages/tpa/tpa_beps_questionnaire_page.py` for the full writeup."""
 import pytest
 
@@ -35,22 +36,26 @@ def _login_and_open(case, page):
 
 
 def _insert_fixture_question(case, page, qc):
-    """Expand the fixture question's own sub-topic row, then click the leaf.
+    """Expand the fixture question's own sub-topic row if (and only if) it
+    is genuinely collapsed, then click the leaf.
 
-    Confirmed live (see pages/tpa/tpa_beps_questionnaire_page.py): the leaf
-    is normally already visible, but a Start Over collapses its sub-topic,
-    and a forced click on a collapsed leaf fails outright - so this expands
-    only when actually needed, driving the real interaction."""
+    The expansion decision reads the sub-topic's real DOM state via
+    `is_topic_expanded()` - the child `<ul>`'s `hidden`/`flex` class -
+    rather than probing the leaf's visibility. That distinction is the
+    whole fix for this module (see gotchas 4 and 5 in
+    pages/tpa/tpa_beps_questionnaire_page.py): the toggle icon's class is a
+    constant that never reflects state, and a visibility probe taken while
+    the tree is still rendering reports False for a topic that is actually
+    expanded - which made the old code blind-click the toggle and COLLAPSE
+    it, so the leaf never appeared and the click burned its full timeout."""
+    if not qc.is_topic_expanded(FIXTURE_TOPIC):
+        case.click(qc.topic_toggle(FIXTURE_TOPIC), f"'{FIXTURE_TOPIC}' expand toggle")
+        expanded = wait_for_content(qc.topic_child_list(FIXTURE_TOPIC))
+        case.check(f"'{FIXTURE_TOPIC}' expanded after clicking its toggle", expanded,
+                   expected="child question list visible", actual=expanded)
     leaf = qc.question_node(FIXTURE_QUESTION)
-    if not leaf.first.is_visible():
-        # Expand via the row's own +/- ICON, not its text - confirmed live
-        # that the text is not the toggle affordance for a collapsed topic
-        # (see TpaBepsQuestionnairePage.topic_expand_icon). This only runs
-        # when the leaf is genuinely collapsed, i.e. after a Start Over.
-        case.click(qc.topic_expand_icon(FIXTURE_TOPIC), f"'{FIXTURE_TOPIC}' expand icon")
-        wait_for_content(leaf)
     case.click(leaf, f"'{FIXTURE_QUESTION}' tree node")
-    page.wait_for_timeout(1500)
+    qc.wait_for_question_in_editor(FIXTURE_QUESTION)
 
 
 @pytest.mark.smoke
@@ -107,7 +112,6 @@ def test_bepsquestionnaire_02_clicking_question_grows_editor(page, result):
 
     case.step(3, f"Click '{FIXTURE_QUESTION}'")
     _insert_fixture_question(case, page, qc)
-    page.wait_for_timeout(1500)
 
     case.step(4, "Verify the editor's content length increased")
     after_len = len(qc.editor_html())
@@ -136,7 +140,6 @@ def test_bepsquestionnaire_03_start_over_shows_confirmation_dialog(page, result)
     case.step(2, "Ensure the editor has content so 'Start Over' is enabled")
     if qc.editor_is_empty():
         _insert_fixture_question(case, page, qc)
-        page.wait_for_timeout(1500)
 
     case.step(3, "Click 'Start Over'")
     case.click(qc.start_over_button, "'Start Over' button")
@@ -173,7 +176,6 @@ def test_bepsquestionnaire_04_start_over_no_keeps_content(page, result):
     )
     qc = _login_and_open(case, page)
     _insert_fixture_question(case, page, qc)
-    page.wait_for_timeout(1500)
     case.step(2, "Record editor length")
     before_len = len(qc.editor_html())
 
@@ -209,7 +211,6 @@ def test_bepsquestionnaire_05_start_over_yes_clears_editor(page, result):
     )
     qc = _login_and_open(case, page)
     _insert_fixture_question(case, page, qc)
-    page.wait_for_timeout(1500)
 
     case.step(2, "Click 'Start Over', then 'Yes'")
     case.click(qc.start_over_button, "'Start Over' button")
@@ -225,7 +226,6 @@ def test_bepsquestionnaire_05_start_over_yes_clears_editor(page, result):
 
     case.step(4, f"Clean up: re-insert '{FIXTURE_QUESTION}'")
     _insert_fixture_question(case, page, qc)
-    page.wait_for_timeout(1000)
 
     actual = ("Confirming 'Start Over' correctly cleared the editor." if ok else
               f"The editor still had content after confirming Start Over (html={qc.editor_html()[:200]!r}).")
@@ -261,7 +261,6 @@ def test_bepsquestionnaire_06_add_to_project_absent_when_empty_present_after_que
 
     case.step(3, f"Click '{FIXTURE_QUESTION}'")
     _insert_fixture_question(case, page, qc)
-    page.wait_for_timeout(1500)
 
     case.step(4, "Verify 'Add to Project' is now visible")
     present_ok = case.verify_visible(qc.add_to_project_button, "'Add to Project' button")

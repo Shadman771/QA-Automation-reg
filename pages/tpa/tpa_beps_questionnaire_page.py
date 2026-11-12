@@ -31,7 +31,7 @@ editor reads exactly `<p><br></p>` (confirmed live), which is why
 `editor_is_empty()` below keys off the inserted-block marker rather than
 "has no child elements".
 
-**Real, live-confirmed tree gotchas (all three cost a full suite run each to
+**Real, live-confirmed tree gotchas (all five cost a full suite run each to
 pin down, so they are worth reading before touching this page)**:
 
 1. **The sub-topic row is a plain TOGGLE, and leaves normally start
@@ -41,9 +41,9 @@ pin down, so they are worth reading before touching this page)**:
    sub-topic row ("Hybrid mismatch arrangements") COLLAPSES it
    (`-> False`), and clicking again re-expands it (`-> True`). So an
    unconditional "expand first" click actively breaks the interaction -
-   expand only when the leaf is genuinely hidden (which in practice means
-   immediately after a Start Over). The top-level topic row ("The digital
-   economy") is NOT involved at all; clicking it changes nothing.
+   expand only when the topic is genuinely collapsed (which in practice
+   means immediately after a Start Over). The top-level topic row ("The
+   digital economy") is NOT involved at all; clicking it changes nothing.
 2. **A collapsed leaf cannot be force-clicked.** WTA's own page documents a
    `force=True` accommodation for its equivalent collapsed state; that does
    NOT work here - Playwright's `force` still requires visibility, and
@@ -53,6 +53,34 @@ pin down, so they are worth reading before touching this page)**:
    `question_node()` below) - once a question is inserted, the editor
    renders its text verbatim, so an unscoped exact-text lookup matches two
    elements and resolves to the editor's own copy.
+4. **The `icon-plus`/`icon-minus` class is NOT a state indicator - it is a
+   constant.** This is the single root cause of tests _02-_06 failing
+   in-suite while passing standalone (diagnosed 2026-11-12 by dumping the
+   row's real DOM across a full toggle cycle). The toggle `<span>` reads
+   `icon-plus` in ALL states - freshly expanded, collapsed, and
+   re-expanded - so any code that infers "is it collapsed?" from the icon
+   class, or that locates the affordance as `span.icon-plus` expecting that
+   to mean "collapsed", is reading a value that never changes. The ONLY
+   observable expansion state is the topic row's own child `<ul>`:
+   `class="... pl-5 flex flex-col"` / `display: flex` when EXPANDED versus
+   `class="... pl-5 hidden"` / `display: none` when COLLAPSED (Tailwind's
+   `hidden`). `is_topic_expanded()` below reads exactly that, and
+   `topic_child_list()` is the locator to wait on to CONFIRM an expansion
+   actually happened rather than assuming the click worked.
+5. **The tree is not in the DOM for ~1.5s after `goto()` returns.**
+   Confirmed live by polling from the moment of navigation: immediately
+   after `tpa_goto` the question tree is `count == 0` (not merely hidden -
+   genuinely absent), and the fixture leaf first becomes visible ~1.50s
+   later. `Locator.is_visible()` does NOT auto-wait, so a bare visibility
+   probe taken right after `goto()` returns False for a tree that is simply
+   still rendering. Combined with gotcha 4 this produced the exact in-suite
+   failure signature seen in `logs/TPA BEPS Questionnaire/`: the probe
+   misread "still rendering" as "collapsed", blind-clicked the toggle, and
+   thereby COLLAPSED an already-expanded topic - after which the leaf never
+   appeared (10s `wait_for_content` burned) and the subsequent leaf click
+   burned its full 60s timeout. `goto()` below therefore waits for the tree
+   to genuinely render before returning control, so every state read after
+   it is taken against a real, settled DOM.
 
 **Real, live-confirmed application behavior**: inserting a question that is
 ALREADY in the editor is a NO-OP, not a duplicate insert (confirmed live:
@@ -72,6 +100,7 @@ real AI generation round-trip is not a deterministic, repeatable assertion)."""
 from playwright.sync_api import Page
 
 from pages.tpa.tpa_common import tpa_goto
+from utils.wait import wait_for_content
 
 
 class TpaBepsQuestionnairePage:
@@ -82,6 +111,7 @@ class TpaBepsQuestionnairePage:
         self.add_to_project_button = page.get_by_role("button", name="Add to Project")
         self.ask_ai_button = page.get_by_role("button", name="Ask AI")
         self.editor = page.locator("div.e-content").first
+        self.tree_rows = page.locator("li[id^='treeCheck_']")
 
         self.start_over_dialog = page.locator("[role='dialog']").filter(has_text="Confirm Start Over")
         self.start_over_yes = self.start_over_dialog.get_by_role("button", name="Yes")
@@ -91,8 +121,18 @@ class TpaBepsQuestionnairePage:
         self.add_to_project_title_input = self.add_to_project_dialog.locator("input[name='name']")
         self.add_to_project_submit_button = self.add_to_project_dialog.get_by_role("button", name="Add")
 
-    def goto(self):
+    def goto(self) -> bool:
+        """Navigates, then waits for the question tree to GENUINELY render
+        before returning control.
+
+        This wait is load-bearing, not defensive padding: confirmed live
+        (see gotcha 5 in the module docstring) the tree is absent from the
+        DOM for ~1.5s after `tpa_goto` returns, and `Locator.is_visible()`
+        does not auto-wait - so without this, any caller that reads tree
+        state immediately after `goto()` reads it against a half-rendered
+        page and draws the wrong conclusion."""
         tpa_goto(self.page, "/tpa/BEPSQuestionnaireCreator")
+        return wait_for_content(self.tree_rows, timeout=20000)
 
     def question_node(self, text: str):
         """Scoped to the question tree's own `<li id="treeCheck_NNN">` rows,
@@ -117,24 +157,66 @@ class TpaBepsQuestionnairePage:
         `question_node()`."""
         return self.page.locator("li[id^='treeCheck_']").get_by_text(text, exact=True)
 
-    def topic_expand_icon(self, text: str):
-        """The real expand/collapse affordance for a topic row: the
-        `span.icon-plus`/`span.icon-minus` inside that row's own `<li>`.
+    def topic_row(self, text: str):
+        """The topic/sub-topic row's own `<li>`. `.last` picks the
+        innermost matching `<li>`, since every ancestor `<li>` also
+        contains the same text."""
+        return self.tree_rows.filter(has_text=text).last
 
-        Confirmed live, and the thing that finally made post-Start-Over
-        inserts work: clicking the row's TEXT does not re-expand a
-        collapsed topic (the leaf stayed hidden through a 10s
-        `wait_for_content` and the subsequent leaf click then burned its
-        full 60s timeout), while clicking this icon expands it immediately
-        (leaf visible, and the following insert grew the editor 11 -> 357
-        chars). `.last` picks the innermost matching `<li>`, since every
-        ancestor `<li>` also contains the same text."""
-        return (self.page.locator("li[id^='treeCheck_']")
-                .filter(has_text=text).last
-                .locator("span.icon-plus, span.icon-minus").first)
+    def topic_child_list(self, text: str):
+        """The topic row's own child `<ul>` - THE single source of truth
+        for whether that topic is expanded.
 
-    def expand_topic(self, text: str):
-        self.topic_expand_icon(text).click()
+        Confirmed live (gotcha 4 in the module docstring): expanded renders
+        `class="... pl-5 flex flex-col"` (`display: flex`), collapsed
+        renders `class="... pl-5 hidden"` (`display: none`). Because
+        Tailwind's `hidden` resolves to `display: none`, Playwright's own
+        visibility check on this element IS the expansion state - no
+        `page.evaluate` or class-string parsing needed, and it is a real
+        locator, so it can be waited on to confirm an expansion actually
+        took effect."""
+        return self.topic_row(text).locator("xpath=./ul").first
+
+    def topic_toggle(self, text: str):
+        """The expand/collapse affordance: the toggle `<span>` in the
+        topic row.
+
+        Matched on the `icon-` class PREFIX deliberately rather than on
+        `span.icon-plus`: confirmed live that this class is a constant that
+        reads `icon-plus` whether the topic is expanded or collapsed (see
+        gotcha 4), so selecting specifically on `icon-plus` would wrongly
+        imply the match itself carries state information."""
+        return self.topic_row(text).locator("span[class*='icon-']").first
+
+    def is_topic_expanded(self, text: str) -> bool:
+        """Reads the REAL expansion state off the child `<ul>`, never off
+        the (constant) toggle icon class."""
+        child = self.topic_child_list(text)
+        return child.count() > 0 and child.is_visible()
+
+    def ensure_topic_expanded(self, text: str, timeout: int = 10000) -> bool:
+        """Leaves `text`'s topic expanded, and returns whether it is.
+
+        Deterministic and state-based rather than a retry loop: it waits
+        for the row to exist, reads the genuine expansion state, toggles
+        AT MOST ONCE (and only if actually collapsed), then confirms the
+        expansion through an observable DOM change. A topic that is
+        already expanded is left alone - clicking it would collapse it,
+        which is exactly the bug this replaces. No attempt is made to
+        re-click on failure: if one honest toggle does not expand the
+        topic, that is a real finding the caller should surface, not
+        something to paper over."""
+        if not wait_for_content(self.topic_row(text), timeout=timeout):
+            return False
+        if self.is_topic_expanded(text):
+            return True
+        self.topic_toggle(text).click()
+        return wait_for_content(self.topic_child_list(text), timeout=timeout)
+
+    def wait_for_question_in_editor(self, text: str, timeout: int = 15000) -> bool:
+        """Waits for the editor to actually contain the inserted question,
+        instead of sleeping a fixed interval and hoping the insert landed."""
+        return wait_for_content(self.editor.get_by_text(text, exact=False), timeout=timeout)
 
     def click_question(self, text: str):
         self.question_node(text).first.click()

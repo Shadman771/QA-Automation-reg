@@ -127,6 +127,41 @@ python run_tests.py --feature Bepsmapper                        # TPA > BEPS > B
 
 (`--feature` is case-insensitive, matching `run_tests.py`'s own lookup.)
 
+### BEPS: smoke / regression / per-environment
+
+`--feature` combines freely with `--smoke` / `--regression` (the feature
+selects the test path, the marker filters within it), so BEPS needs no
+special-case commands of its own:
+
+```bash
+python run_tests.py --feature Tpabeps --smoke            # BEPS smoke only
+python run_tests.py --feature Tpabeps --regression       # BEPS regression only
+python run_tests.py --feature Bepsquestionnaire --smoke   # one sub-feature, smoke only
+python run_tests.py --feature Bepsmapper --regression     # one sub-feature, regression only
+```
+
+Environment selection is **not** a command-line flag anywhere in this
+project - it is the `.env` block toggle (Staging / RC / Live), picked up
+automatically on the next run. Switch environment, then run any command
+above unchanged. Delete `.auth/state.json` after switching if you want to
+force a fresh login (`utils/session.py` already auto-detects an
+origin mismatch, so this is belt-and-braces rather than required).
+
+**Live/production caution for BEPS Questionnaire**: `BepsQuestionnaire_02`
+through `_06` write to **account-level persisted** questionnaire draft
+content - `_02`/`_05`/`_06` confirm `Start Over`, which wipes the real
+draft, and `_03`/`_04` insert questions into it. Against Live, run only the
+read-only subset instead of the whole feature:
+
+```bash
+# Live-safe BEPS subset: all 7 Mapper tests + Questionnaire _01/_07 only
+python -m pytest tests/tpa/beps -k "mapper or questionnaire_01 or questionnaire_07" -v
+```
+
+BEPS Mapper is entirely read-only and safe to run in full on any
+environment. See [TPA/BEPS/BEPS_BUSINESS_EXPLORATION.md](TPA/BEPS/BEPS_BUSINESS_EXPLORATION.md)
+> "Environment coverage" for the full rationale and recorded results.
+
 ## Run One Test Case
 
 ```bash

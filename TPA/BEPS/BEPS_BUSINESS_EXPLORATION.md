@@ -22,7 +22,7 @@ Unverified / Not Applicable.
 | Field | Value |
 |---|---|
 | Route | `/tpa/BEPSQuestionnaireCreator` |
-| Exploration status | **Explored, Automated; Tested PARTIALLY on RC — 2/7 pass, 5 BLOCKED** (see "Blocked: post-Start-Over tree expansion" below) |
+| Exploration status | **Explored, Automated, Tested** — 7/7 RC, 7/7 Staging; on Live `_01`/`_07` Tested and `_02`–`_06` **intentionally excluded** for production safety (see "Environment coverage" below) |
 | Business purpose | Build a free-form BEPS-focused questionnaire/memo by inserting pre-authored questions (grouped by BEPS topic) into a rich-text document, then exporting or saving it to a Project. |
 
 **Confirmed live, not assumed**: this page is structurally byte-identical
@@ -54,47 +54,88 @@ mechanisms", "A multilateral instrument".
 
 **CRUD coverage**: Create (insert question) / Update (insert another) / Delete (Start Over) are all exercised; there is no "questionnaire listing" to browse (single document per account), so no Read/List/pagination/search test applies here - not invented.
 
-### Blocked: post-Start-Over tree expansion (status **Blocked**, honestly reported)
+### RESOLVED (2026-11-12): post-Start-Over tree expansion — root cause and fix
 
-`BepsQuestionnaire_01` and `_07` pass reliably on RC. `_02` through `_06`
-are currently **BLOCKED**, all on the same single unresolved interaction:
-re-inserting a question *after* a Start Over, within a sequential suite run.
-They are left in place, with their assertions fully intact - deliberately
-NOT deleted, skipped, or weakened to manufacture a green run.
+Previously status **Blocked** (`_02`-`_06` failing in-suite while passing
+standalone). Now **Tested** — 7/7 on RC and 7/7 on Staging, with every
+original assertion intact. Nothing was skipped, deleted or weakened; the
+tests were failing for a real reason, and that reason was found.
 
-What was established live, across five full suite runs plus four standalone
-diagnostics (each finding is reproducible, and each is already documented in
-`pages/tpa/tpa_beps_questionnaire_page.py`):
+**Root cause — three compounding facts, none of them a wait-tuning issue.**
+Diagnosed by dumping the tree's real DOM across a full toggle cycle and by
+polling the tree's existence from the moment of navigation (throwaway
+discovery scripts, the standard method in this repo):
 
-- On a normal load the question leaf is already visible and a plain click
-  inserts it correctly. This is why `_01`/`_07` pass.
-- A Start Over collapses the leaf's sub-topic. Playwright's `force=True`
-  does **not** help (force still requires visibility - forced clicks failed
-  fast with "Element is not visible").
-- Clicking the topic row's **text** does not re-expand a collapsed topic.
-- Clicking the row's own `span.icon-plus` **does** re-expand it in a
-  standalone script (verified: leaf became visible, insert grew the editor
-  11 -> 357 chars) - but the identical call inside the suite still leaves
-  the leaf hidden past a 10s `wait_for_content`, so some state difference
-  between the standalone and in-suite sequences is still unaccounted for.
-- Separately confirmed real app behavior (not a test bug): re-inserting a
-  question that is already present is a **no-op**, not a duplicate insert
-  (editor stayed at exactly 357 chars) - which is why `_02` resets via
-  Start Over first.
+1. **The toggle icon's class is a CONSTANT, not a state indicator.** The
+   row's toggle `<span>` reads `icon-plus` in *every* state — freshly
+   expanded, collapsed, and re-expanded alike. So the old approach, which
+   located the affordance as `span.icon-plus` and implicitly treated a
+   match as meaning "collapsed", was reading a value that never changes.
+   The ONLY observable expansion state is the topic row's own child `<ul>`:
+   `class="... pl-5 flex flex-col"` / `display: flex` when **expanded**
+   versus `class="... pl-5 hidden"` / `display: none` when **collapsed**
+   (Tailwind's `hidden`).
+2. **The tree is absent from the DOM for ~1.5s after `goto()` returns** —
+   measured as `count == 0` immediately after navigation, with the fixture
+   leaf first becoming visible ~1.50s later. `Locator.is_visible()` does
+   **not** auto-wait, so a bare visibility probe taken right after `goto()`
+   returns `False` for a tree that is simply still rendering.
+3. **Combined, (1) and (2) inverted the logic.** The old helper probed the
+   leaf's visibility immediately after `goto()`, misread "still rendering"
+   as "collapsed", and blind-clicked the toggle — thereby **collapsing a
+   topic that was already expanded**. After that the leaf could never
+   appear: the 10s `wait_for_content` was burned, then the leaf click burned
+   its full 60s timeout. That is exactly the signature recorded in
+   `logs/TPA BEPS Questionnaire/` (expand click, ~11s gap, ~61s gap, fail),
+   repeated identically for `_02`-`_06`.
 
-Next step for whoever picks this up: instrument the in-suite failure
-directly (dump the sub-topic `<li>`'s outer HTML and the leaf's computed
-style at the moment the expand icon click lands) to find what differs from
-the standalone case. The remaining unknown is narrow and well-bounded; it is
-an automation-side interaction problem, with no evidence so far of an
-application defect.
+This also explains the standalone-vs-in-suite asymmetry that made the
+original investigation so slow: it was never really about suite sequencing.
+A standalone script that happened to interact *after* the tree had rendered
+read the state correctly; the in-suite path raced it.
+
+**The fix** (`pages/tpa/tpa_beps_questionnaire_page.py` +
+`tests/tpa/beps/test_tpa_beps_questionnaire.py`):
+
+- `goto()` now waits for the question tree to genuinely render before
+  returning control, so every subsequent state read is taken against a
+  real, settled DOM.
+- `topic_child_list()` exposes the child `<ul>` — the real state source.
+  Because Tailwind's `hidden` is `display: none`, Playwright's own
+  visibility check on that element *is* the expansion state (no
+  `page.evaluate`, no class-string parsing), and it is a real locator, so
+  it can be waited on to **confirm** an expansion took effect.
+- `is_topic_expanded()` reads that state; `ensure_topic_expanded()` toggles
+  **at most once and only when genuinely collapsed**, then verifies the
+  result via an observable DOM change. Deliberately *not* a retry loop: if
+  one honest toggle does not expand the topic, that is a real finding to
+  surface, not something to paper over.
+- `topic_toggle()` matches on the `icon-` class *prefix*, so the locator no
+  longer implies that the match carries state information.
+- The post-insert fixed `wait_for_timeout` calls were replaced with
+  `wait_for_question_in_editor()`, which waits for the editor to actually
+  contain the inserted question (6 fixed waits removed).
+
+**Real, live-confirmed environment difference that makes the state-based
+approach mandatory rather than cosmetic**: the tree's *initial* expansion
+state genuinely differs per environment. On **RC** the fixture sub-topic
+("Hybrid mismatch arrangements") loads already **expanded**; on **Live**
+every topic loads **collapsed** (both confirmed via a strictly read-only DOM
+probe). Any implementation that hardcodes "expand first", or assumes "it
+starts expanded", is therefore wrong on one of the two environments by
+construction — the same "read the real state first" lesson as TPA Case
+Law's per-environment empty-country data.
+
+Separately re-confirmed real app behavior (not a test bug): re-inserting a
+question that is already present is a **no-op**, not a duplicate insert —
+which is why `_02` resets via Start Over first.
 
 ## BEPS Mapper
 
 | Field | Value |
 |---|---|
 | Route | `/tpa/beps` |
-| Exploration status | **Explored, Automated, Tested** (RC) |
+| Exploration status | **Explored, Automated, Tested** — 7/7 on RC, Staging **and** Live (entirely read-only, so safe to run against production) |
 | Business purpose | For a selected jurisdiction, map each BEPS Action (BEPS 1.0, 15 actions) or Pillar (BEPS 2.0, 2 pillars) to where that topic is actually covered across the application's own modules (Transfer Pricing Analyzer / World Tax Analyzer). |
 
 **Real, live-confirmed finding - this is NOT a data-field/ETL mapper**: the
@@ -124,5 +165,46 @@ not missing data.
 
 ## Environment validation
 
-- **RC**: both sub-features explored and automated against. Final RC run: **9/14 pass** - **BEPS Mapper 7/7** (fully green), **BEPS Questionnaire 2/7** with `_02`-`_06` Blocked on the single tree-expansion interaction described above. Run via `--feature tpabeps`, or independently via `--feature bepsquestionnaire` / `--feature bepsmapper`.
-- **Staging / Live**: not run this round within the available time budget - the automation itself is environment-agnostic (no hardcoded URLs/credentials/country, uses `APP_ORIGIN`/`.env`/live-confirmed country names the same way every other TPA page does), so running it against Staging/Live only requires the project's standard `.env` switch + `.auth/state.json` deletion ritual. Flagged honestly as **Unverified** on those two environments rather than claimed without execution.
+All three environments were executed on 2026-11-12 (switching environments
+via the project's standard `.env` block toggle + `.auth/state.json`
+deletion ritual; `.env` was backed up first and restored byte-identically
+afterward). No hardcoded URLs, credentials or environment-specific selectors
+are used anywhere in this module - it resolves everything through
+`APP_ORIGIN`/`.env` like every other TPA page.
+
+- **RC** — **14/14 pass** (92s). Run via `--feature tpabeps`, or
+  independently via `--feature bepsquestionnaire` / `--feature bepsmapper`.
+  Confirmed twice: once immediately after the fix, and again as a final
+  regression after `.env` was restored to RC.
+- **Staging** — **14/14 pass** (82s). No Staging-specific differences
+  encountered.
+- **Live (production)** — **9 of 14 executed, 9/9 pass; the remaining 5 are
+  deliberately EXCLUDED, not failing or unverified.**
+  - **Executed and passing (9)**: all 7 BEPS Mapper tests, plus
+    `BepsQuestionnaire_01` and `_07`. These are read-only — Mapper only
+    selects jurisdictions, expands accordions, toggles a leaf checkbox back
+    off again and searches; `_01`/`_07` only assert page load and the deep
+    link. Nothing is created, saved, submitted or deleted.
+  - **Excluded on Live (5)**: `BepsQuestionnaire_02`, `_03`, `_04`, `_05`,
+    `_06`. The reason is specific and not a convenience: the questionnaire
+    editor's content is **account-level persisted state** (confirmed live —
+    it survives page loads and is shared by anyone using this account), and
+    these five either confirm `Start Over` (`_02`, `_05`, `_06`), which
+    **wipes that real draft**, or insert questions into it (`_03`, `_04`).
+    Running them against production would destroy live user data on a real
+    shared account, so they were withheld under the project's standing
+    production-safety rule.
+  - To keep this honest rather than merely asserted, the *premise* of the
+    fix was still verified against Live directly, with a strictly read-only
+    DOM probe (no clicks, no writes): the tree renders with the same
+    structure (44 rows / 15 topic rows, identical to RC), the toggle icon
+    is the same `icon-plus` constant, and the child-`<ul>`
+    `hidden`/`flex` state contract holds — the one genuine difference being
+    that **every topic loads collapsed on Live**, where RC loads the
+    fixture sub-topic expanded. That difference is precisely what the
+    state-based fix handles and what the old visibility-probe approach
+    could not.
+  - Re-enabling the 5 excluded tests on Live would require an approved,
+    dedicated production test account whose questionnaire draft is
+    expendable. Until such an account exists, running them there should
+    stay excluded by choice rather than attempted.
