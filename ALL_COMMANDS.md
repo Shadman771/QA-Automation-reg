@@ -10,12 +10,31 @@ cd QA_Automation
 
 ## First-Time Setup
 
+**One-command setup (recommended)** - detects your OS, creates/reuses `.venv`,
+installs dependencies, installs Playwright's chromium browser, and creates
+`.env` from `.env.example` if you don't already have one (never overwrites a
+real `.env`). Safe to re-run any time, e.g. after a `git pull`:
+
+```powershell
+# Windows (PowerShell)
+.\scripts\setup.ps1
+```
+
+```bash
+# macOS / Linux
+bash scripts/setup.sh
+```
+
+**Manual setup**, if you'd rather do each step yourself:
+
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\activate       # Windows: .venv\Scripts\activate
+source .venv/bin/activate    # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 python -m playwright install chromium
-copy .env.example .env      # then fill in BASE_URL / LOGIN_EMAIL / LOGIN_PASSWORD
+copy .env.example .env      # Windows; macOS/Linux: cp .env.example .env
+                             # then fill in BASE_URL / LOGIN_EMAIL / LOGIN_PASSWORD
 ```
 
 ## `.env` Setup
@@ -240,6 +259,13 @@ rm -rf .auth
 ```
 
 `tests/login/` is unaffected - it always starts unauthenticated, by design.
+
+## Git Workflow
+
+Pull/branch/commit/push/PR/merge/conflict-resolution commands for this repo
+live in a separate reference: [GIT_WORKFLOW.md](GIT_WORKFLOW.md). It also
+covers this project's multi-remote setup and the auto-generated "publish
+latest QA report" commits `utils/publish.py` creates after each run.
 
 ## Debug One Test with Playwright's Own Runner
 

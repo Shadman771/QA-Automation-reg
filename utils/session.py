@@ -16,6 +16,7 @@ those tests exercise the login page/flow itself and must start from a
 genuinely unauthenticated context.
 """
 import json
+import time
 from pathlib import Path
 
 from config.settings import APP_ORIGIN, BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD, PROJECT_ROOT
@@ -39,7 +40,6 @@ def wait_for_login_sync(page, timeout_ms: int = 30000) -> bool:
     longer /auth/login AND the sync banner is gone) or timeout. Returns
     True if authenticated-looking, False if still on /auth/login at
     timeout (a genuine failure, not a slow one)."""
-    import time
     deadline = time.time() + timeout_ms / 1000
     while time.time() < deadline:
         try:
