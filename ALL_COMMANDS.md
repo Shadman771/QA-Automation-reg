@@ -63,8 +63,9 @@ python run_tests.py
 Runs every feature in `FEATURE_PATHS` (Login, Dashboard, every WTA feature:
 Information, Pillar2, News, Forms, Regulations, Treaties, Tools, Calculator, every
 RegBriefings feature: My Briefs, World Tax Brief, Transfer Pricing Brief, Tax Treaty
-Brief, Archive, Preferences, and every TPA feature: Home, National Rules, International
-Guidelines, News, Forms, Regulations, Case Law), cleans previous screenshots/logs/report first, regenerates
+Brief, Archive, Preferences, every TPA feature: Home, National Rules, International
+Guidelines, News, Forms, Regulations, Case Law, and every Workspace feature: Dashboard,
+Entities, Calendar), cleans previous screenshots/logs/report first, regenerates
 the HTML report and per-feature Excel files, and prints the report path. Runs headed by
 default (`HEADLESS=false` in `.env`) and opens the live dashboard
 (`http://127.0.0.1:8787/dashboard.html`) automatically - see README.md > "Watching it run".
@@ -87,6 +88,9 @@ python run_tests.py --feature Regbriefings      # EVERY RegBriefings feature at 
 
 python run_tests.py --feature Tpa               # EVERY TPA feature at once (Home, National Rules, International
                                                  # Guidelines, News, Forms, Regulations, Case Law) - nothing from WTA/RegBriefings
+
+python run_tests.py --feature Workspace         # EVERY Workspace feature at once (Dashboard, Entities, Calendar) -
+                                                 # nothing from WTA/RegBriefings/TPA
 ```
 
 Verify the isolation yourself at any time with:
@@ -95,6 +99,7 @@ Verify the isolation yourself at any time with:
 python -m pytest tests/wta --collect-only -q          # only WTA tests
 python -m pytest tests/regbriefings --collect-only -q  # only RegBriefings tests
 python -m pytest tests/tpa --collect-only -q           # only TPA tests
+python -m pytest tests/workspace --collect-only -q    # only Workspace tests
 ```
 
 For an entirely new parent module added later (see "Adding a Feature" below), the same
@@ -142,7 +147,38 @@ python run_tests.py --feature Tpabeps                           # TPA > BEPS - b
                                                                   # BEPS Questionnaire, BEPS Mapper
 python run_tests.py --feature Bepsquestionnaire                 # TPA > BEPS > BEPS Questionnaire only
 python run_tests.py --feature Bepsmapper                        # TPA > BEPS > BEPS Mapper only
+
+python run_tests.py --feature Workspacedashboard                 # Workspace > Dashboard (Risk Heatmap + News feed) -
+                                                                  # "dashboard" was already taken by the platform
+                                                                  # execution dashboard (tests/dashboard), so this
+                                                                  # product's own Dashboard uses this non-colliding key
+python run_tests.py --feature Entities                           # Workspace > Entities (data grid + Add Entity wizard)
+python run_tests.py --feature Calendar                           # Workspace > Calendar (Agenda/Calendar toggle +
+                                                                  # Create New Event modal)
 ```
+
+### Workspace: per-environment runs and the report
+
+Environment is chosen by which `.env` block is uncommented (Staging / RC / Live), not by a
+flag. To run the Workspace scope in each environment:
+
+```bash
+# 1. In .env, uncomment exactly ONE block (BASE_URL / LOGIN_EMAIL / LOGIN_PASSWORD) -
+#    "#Reg RC", "#Reg Staging" or "#Reg Live" - and comment the other two.
+# 2. Clear the cached login so the new environment gets a fresh session:
+rm -f .auth/state.json                     # PowerShell: Remove-Item .auth\state.json
+# 3. Run:
+python run_tests.py --feature Workspace                    # all 3 modules (17 tests)
+python run_tests.py --feature Workspace --smoke            # critical path only (7 tests)
+python run_tests.py --feature Workspace --regression       # regression only (10 tests)
+```
+
+All 17 Workspace tests are read-only (modals are opened and cancelled, never saved), so the
+same command is safe on Live with no exclusions. Each run regenerates
+`reports/automation_report.html` (auto-opened at the end; printed as a `file://` link) and
+`test_data/Workspace/<Feature>/*.xlsx`. The report covers only that run, so to keep one per
+environment, copy it before the next run, e.g.
+`cp reports/automation_report.html reports/Workspace_RC_report.html`.
 
 (`--feature` is case-insensitive, matching `run_tests.py`'s own lookup.)
 
@@ -310,12 +346,18 @@ pattern at the top level instead - `pages/`, `tests/<feature>/`, `FEATURE_PATHS`
 register it in `run_tests.py` the same way `WTA_FEATURE_PATHS`/the `"wta"` aggregate key
 are, and in `config/settings.py::OTHER_MODULE_FEATURES` (generalized from the old
 two-way platform/WTA split specifically to support this) so `feature_dir()` nests its
-output under the right module segment. **RegBriefings and TPA are both real, built
-examples of this** (`pages/regbriefings/` + `REGBRIEFINGS_FEATURE_PATHS`/`"regbriefings"`;
-`pages/tpa/` + `TPA_FEATURE_PATHS`/`"tpa"`, both in `run_tests.py`, with
-`test_data/RegBriefings/<Feature>/` and `test_data/TPA/<Feature>/` respectively) -
-follow their exact structure for the next new parent module. See `AGENT.md` >
-"Parent module structure" and `CLAUDE.md` > "RegBriefings" / "TPA".
+output under the right module segment. **RegBriefings, TPA and Workspace are all real,
+built examples of this** (`pages/regbriefings/` + `REGBRIEFINGS_FEATURE_PATHS`/
+`"regbriefings"`; `pages/tpa/` + `TPA_FEATURE_PATHS`/`"tpa"`; `pages/workspace/` +
+`WORKSPACE_FEATURE_PATHS`/`"workspace"`, all in `run_tests.py`, with
+`test_data/RegBriefings/<Feature>/`, `test_data/TPA/<Feature>/` and
+`test_data/Workspace/<Feature>/` respectively) - follow their exact structure for the
+next new parent module. If a sub-feature's natural key would collide with an existing
+one (Workspace's own "Dashboard" page collided with the pre-existing platform-level
+execution dashboard's `--feature dashboard`), pick a non-colliding key (`workspacedashboard`)
+and document the collision/choice in `CLAUDE.md`, the same way this file documents it.
+See `AGENT.md` > "Parent module structure" and `CLAUDE.md` > "RegBriefings" / "TPA" /
+"Workspace".
 
 ## Discovery scripts
 

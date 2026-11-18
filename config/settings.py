@@ -103,6 +103,11 @@ OTHER_MODULE_FEATURES = {
         "TPA BEPS Questionnaire",
         "TPA BEPS Mapper",
     },
+    "Workspace": {
+        "Workspace Dashboard",
+        "Workspace Entities",
+        "Workspace Calendar",
+    },
 }
 
 

@@ -76,15 +76,37 @@ TPA_FEATURE_PATHS = {
 # BEPS Questionnaire/Mapper are the newest TPA sub-features, added
 # additively above without touching any existing TPA_FEATURE_PATHS entry.
 
+# Workspace: a parent module sibling of WTA/RegBriefings/TPA (see
+# CLAUDE.md > "Parent module structure") - pages/workspace/, tests/
+# workspace/<feature>/, test_data/Workspace/<Feature>/, same shape as the
+# other three. Only Dashboard/Entities/Calendar are in scope for this
+# build (a 4th real sidebar item, "TP Documenter", was confirmed to exist
+# live but was not requested, so it is not automated - same "don't invent
+# scope" discipline as TPA's own out-of-scope Treaties/Commentary call
+# when those modules were first discovered).
+#
+# "dashboard" is already taken by the platform-level execution dashboard
+# (tests/dashboard/ - a different thing entirely, the live HEADLESS=false
+# run dashboard, not this product's own Workspace > Dashboard page), so
+# this product's own Dashboard sub-feature uses the non-colliding key
+# "workspacedashboard" instead.
+WORKSPACE_FEATURE_PATHS = {
+    "workspacedashboard": "tests/workspace/workspacedashboard",
+    "entities": "tests/workspace/entities",
+    "calendar": "tests/workspace/calendar",
+}
+
 FEATURE_PATHS = {
     "login": "tests/login",
     "dashboard": "tests/dashboard",
     "wta": "tests/wta",  # every WTA feature at once - the parent module
     "regbriefings": "tests/regbriefings",  # every RegBriefings feature at once - the parent module
     "tpa": "tests/tpa",  # every TPA feature at once - the parent module
+    "workspace": "tests/workspace",  # every Workspace feature at once - the parent module
     **WTA_FEATURE_PATHS,
     **REGBRIEFINGS_FEATURE_PATHS,
     **TPA_FEATURE_PATHS,
+    **WORKSPACE_FEATURE_PATHS,
 }
 
 

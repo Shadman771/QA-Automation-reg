@@ -1,19 +1,26 @@
 # QA_Automation — Regplus World Tax Analyzer
 
 Playwright + Pytest regression framework, built from the real application
-(discovered via live browser inspection, not assumed markup). Current scope:
-**Login**, the **post-login landing page/Dashboard**, and the **World Tax
-Analyzer (WTA) module**: the **Information** workspace, all 6 **Pillar 2**
-dropdown sub-pages (Information, Compliance Calendar, Forms, Simulator,
-Country Commentary, Regulation, News), the top-level **News**,
-**Forms** and **Regulations** modules, all 5 **Treaties** dropdown
-sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data),
-both **Tools** dropdown sub-pages (Projects - a project management
-workspace with create/rename/delete; Questionnaire Creator - a rich-text
-questionnaire builder with Start Over/Add to Project), and the
-**Calculators** dropdown's **Corporate Rate Finder** sub-page (multi-select
-jurisdiction/year rate comparison, Excel/print export, rate-details modal -
-the other 5 Calculator sub-pages are scoped for future rounds).
+(discovered via live browser inspection, not assumed markup). Current scope
+spans 4 parent modules behind the app's own top-level product tabs -
+**World Tax Analyzer (WTA)**, **RegBriefings**, **Transfer Pricing Analyzer
+(TPA)**, and **Workspace** - plus the platform-level **Login** and
+**post-login landing page/Dashboard**. See [CLAUDE.md](CLAUDE.md) for the
+full, current per-module breakdown (this section below reflects WTA's own
+original build and is kept for historical/architectural reference - WTA
+remains the module with the deepest coverage: the **Information** workspace,
+all 6 **Pillar 2** dropdown sub-pages (Information, Compliance Calendar,
+Forms, Simulator, Country Commentary, Regulation, News), the top-level
+**News**, **Forms** and **Regulations** modules, all 5 **Treaties** dropdown
+sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data), both
+**Tools** dropdown sub-pages (Projects - a project management workspace
+with create/rename/delete; Questionnaire Creator - a rich-text
+questionnaire builder with Start Over/Add to Project), and all 6
+**Calculators** dropdown sub-pages). **Workspace** (added most recently)
+covers **Dashboard** (Risk Heatmap + filterable News/Alerts feed),
+**Entities** (the entity data grid + Add Entity wizard), and **Calendar**
+(Agenda/month-grid toggle + Create New Event) - see
+[Workspace/WORKSPACE_BUSINESS_EXPLORATION.md](Workspace/WORKSPACE_BUSINESS_EXPLORATION.md).
 
 ## Architecture
 
