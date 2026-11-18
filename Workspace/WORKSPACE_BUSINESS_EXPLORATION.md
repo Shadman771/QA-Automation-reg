@@ -1,211 +1,196 @@
 # Workspace — Business Exploration (Dashboard, Entities, Calendar)
 
-Exploration performed live against RC (`regplusrc.reganalytics.com`), logged in as the
-project's standard RC test account (`Handy Home AG`), via throwaway Playwright discovery
-scripts (not part of the suite — standard practice for this project, see CLAUDE.md).
-Screenshots and raw HTML/innerText dumps were captured during discovery and are not
-checked in (scratchpad artifacts only); the findings below are transcribed from those
-live captures.
+Explored live on RC (`regplusrc.reganalytics.com`, account chart "Handy Home AG") with
+throwaway Playwright discovery scripts (not part of the suite — the project's standard
+practice, see CLAUDE.md). The first pass (2026-11-18) was read-only; the second pass the
+same day exercised every create / edit / delete operation with throwaway records named
+`WorkspaceQA_...`, all of which were deleted again. Findings below are transcribed from those
+live sessions and were then re-confirmed by the automated suite on RC, Staging and Live.
 
 ## Scope
 
 **Workspace** is one of the 4 top-level product tabs (Workspace / World Tax Analyzer /
-Transfer Pricing Analyzer / RegBriefings — see `pages/landing_page.py`). Clicking it (or
-navigating directly) lands on `/companydata/dashboard/`. The left sidebar offers 4 real
-items, confirmed via real `<a href="...">` elements (not the no-href `<span>` pattern
-RegBriefings' sidebar uses): **Dashboard**, **Entities**, **Calendar**, and **TP
-Documenter**. Per this build's explicit scope, only Dashboard/Entities/Calendar are
-explored and automated — TP Documenter is confirmed to exist but is intentionally **out
-of scope** (not requested, so not invented).
+Transfer Pricing Analyzer / RegBriefings). It lands on `/companydata/dashboard/`. The sidebar
+has 4 real links: **Dashboard**, **Entities**, **Calendar** and **TP Documenter**. Only the
+first three are in scope; TP Documenter exists but was not requested and is not automated.
+Every in-scope page supports a direct deep link.
 
-Every one of the 3 in-scope pages supports a direct full-page deep link (confirmed live
-for all 3 routes), the same pattern as TPA/RegBriefings/Treaties, not WTA's Tools/
-Calculator menu-only restriction.
+A chart selector (top-left, "Handy Home AG") lists the account's entity charts and offers
+"Add Entity Chart". Chart-level management is outside the three requested modules and is not
+automated; all tests work inside whichever chart the account opens by default.
+
+## What can be created, changed and deleted
+
+| Operation | Exists? | Where / how | Automated |
+|---|---|---|---|
+| Create entity | Yes | Entities > Add Entity (3-step wizard) | Yes |
+| Edit entity | Yes | Entity row menu > Edit (same wizard, "Edit Entity") | Yes |
+| Delete entity | Yes | Entity row menu > Delete > confirm | Yes |
+| Bulk-import entities | Yes | Entities > Import Entities (.xlsx upload, column mapping) | Dialog only — never uploads (cannot be cleanly undone) |
+| Export entities | Yes | Entities > Export as Excel | Yes (download verified) |
+| Edit an entity's related parties | Yes | TP View > Data > row menu > Edit | Dialog opened and cancelled only (saving would alter pre-existing entities' relationships) |
+| Delete from TP View | **No** | TP View's row menu has Edit only | Asserted absent |
+| Create custom event | Yes | Calendar > Create New Event > Single Event | Yes |
+| Edit custom event | Yes | Event row menu > Edit ("Edit Event") | Yes |
+| Delete custom event | Yes | Event row menu > Delete > confirm | Yes |
+| Edit / delete a system deadline | **No** | CbC Report, CIT Return etc. rows have no row menu | Asserted absent |
+| Bulk-upload events | Yes | Create New Event > Multiple Events (.xlsx, optional "Replace the existing events") | Tab inspected only — never uploads |
+| Event detail view | **No** | Clicking an Agenda row or a month-grid event opens nothing; the row's chevron only expands the row inline | Not applicable |
+| Dashboard create / edit / delete | **No** | The Dashboard only displays Entities and Calendar data | Covered through cross-module tests |
+| Dashboard chart drill-down | **No** | The heatmap is a canvas with a 4-button view toolbar; nodes do not navigate | Chart + toolbar presence asserted |
 
 ## Dashboard (`/companydata/dashboard/`)
 
-**Business purpose**: a single-screen risk overview across the account's entities, plus a
-feed of upcoming compliance deadlines and relevant tax news, scoped to the risk profile
-of the entities' jurisdictions.
+**Business purpose**: one screen showing risk across the account's entities plus upcoming
+compliance deadlines and tax news for the entities' jurisdictions.
 
-Two real sections:
-
-1. **Risk Heatmap** — "A visual overview of risk across your entities". Rendered via a
-   yFiles-licensed SVG tree chart (confirmed: the page's own footer text reads "yFiles
-   HTML Development License" twice) mapping each entity to its home jurisdiction, color-
-   coded by a real High/Medium/No Risk legend (3 real DOM `<span>` + label pairs). The
-   chart canvas itself is a third-party widget with no assertable business content beyond
-   its legend and heading — automation verifies the legend and heading, not the chart's
-   visual render.
-2. **News, Alerts & Updates** — a real, filterable feed combining compliance deadlines
-   (e.g. "Corporate Income Tax Return (Form C-S/ Form C-S (Lite)/ Form C)", due "30
-   November 2026", tagged to "Handy Home Singapore") and tax-news articles (e.g. "UK
-   introduces new transfer pricing reporting requirements...", tagged to "Handy Home UK").
-   Confirmed live:
-   - 4 real chip buttons — "All (N)", "High (N)", "Medium (N)", "No Risk (N)" — the counts
-     are genuine, live entity-risk counts for this account (on RC: All=14, High=9,
-     Medium=0, No Risk=5). A chip with a real 0 count (`Medium (0)` on this account)
-     renders `disabled`, not simply unclickable-but-enabled — confirmed via the real
-     `disabled` HTML attribute.
-   - Selecting a non-"All" chip (e.g. "High") narrows the feed AND adds a "Filtered" label
-     next to the heading — confirmed via a real before/after innerText diff (UK/Canada/
-     Brazil news items, which only applied to non-High-risk entities, disappeared).
-   - A `placeholder="Search"` text input inside the panel further narrows the same feed.
-   - Each feed card is a real `<div id="event-card-<N>">` — a stable id prefix used as the
-     "how many items are showing" count proxy.
+- **Risk Heatmap** — a canvas chart (yFiles) with one node per entity, a High / Medium / No
+  Risk legend and a 4-button view toolbar. A newly created entity appears as a node and
+  disappears when deleted.
+- **News, Alerts & Updates** — one card per entity (`<div id="event-card-N">`: entity name,
+  jurisdiction flag, then that jurisdiction's deadlines and news). Custom calendar events
+  appear here too.
+  - Risk chips "All (N)", "High (N)", "Medium (N)", "No Risk (N)" — counts are in the
+    accessible name; High + Medium + No Risk = All. A chip with count 0 carries a real
+    `disabled` attribute. Chips are single-select; the active one gets a colour-suffixed
+    class. Selecting a risk chip adds a "Filtered" label and leaves only items whose
+    coloured bar matches (red for High, green for No Risk).
+  - Search filters on keystrokes, is case-insensitive, and a no-match search shows "No news
+    or updates match your current search or filter."
+  - "Collapse panel" hides the feed and leaves the heatmap.
 
 ## Entities (`/companydata/entities/information/data/`)
 
-**Business purpose**: the account's entity master data — every legal entity the account
-tracks, its jurisdiction, ownership chain, business type and tax characterization, with
-tools to add new entities and view them from 3 different angles.
+**Business purpose**: the account's legal-entity master data — jurisdiction, ownership chain,
+business type and tax characterization — viewed as data grids or charts.
 
-Confirmed live:
-
-- **3 panels** (`<button class="rs-panel-btn">`), each with its own Data/Chart link(s),
-  all mounted in the DOM at once with distinct real hrefs (not an ambiguous-text
-  situation):
-  - **Entity Information** → Data (`/information/data/`, the default view), Chart
-    (`/information/chart/`)
-  - **TP View** → Data (`/transferpricing/data/`), Chart (`/transferpricing/chart/`)
-  - **Tax Risk** → Chart only (`/taxrisk/chart/`, confirmed no Data view exists for this
-    one panel — a real, asymmetric design, not an oversight)
-  - A separate "Entity Chart" link also exists; not explored further (out of this build's
-    requested surface — the Data grid was the primary ask).
-- **The Data grid** is a real `<table>` with a single `<tbody>`, one `<tr>` per entity (22
-  real entities on the RC account at time of exploration: "Handy Home AG", "Handy Home
-  Singapore", "3rd Party 1", several visibly test/placeholder-named rows like "ownrer"/
-  "ffdffd", etc. — real, messy shared-account data, not synthetic fixture data). 9 columns:
-  ID, Entity Name, Incorporation Jurisdiction, Sub-National, Tax Residence, Ownership,
-  Ownership %, Type, Tax Characterization. Several columns are sortable (`aria-sort`
-  attribute, real `th.reg-table-th--sortable`), defaulting to `entityName:asc` (confirmed
-  in the URL query string: `?sort=entityName:asc`). No pagination controls were found
-  anywhere in the DOM — all entities render on one page at this account's current size;
-  this may not hold on an account with many more entities, which is documented here
-  rather than assumed to generalize.
-- A `placeholder="Search"` input narrows the grid.
-- **"Add Entity"** opens a real multi-step wizard modal (3 tabs: Legal/Ownership/Tax).
-  Step 1 ("Legal Information") has 5 fields: ID\* (`name="entityCode"`), Name\*
-  (`name="entityName"`), Incorporation Jurisdiction\* (an rsuite Select), Sub-National (an
-  rsuite Select), Business Type\* (defaults to "Company"), Business SIC Code\* (an rsuite
-  Select). **Confirmed live**: the "Next" button's `disabled` attribute renders as
-  `disabled=""` (present with an empty value, not absent) while the required fields are
-  empty — a real, assertable gate, not merely a visual/CSS-only disabled look.
-- **"Import Entities"** button exists (confirmed present) but was not explored further —
-  a bulk-import flow is inherently higher-risk to exercise against a shared real account
-  and was out of this build's requested scope.
-
-Per this project's production-safety rule, automation only opens/validates/cancels the
-Add Entity wizard — it never actually submits a new entity into this shared, real
-account.
+- **Views**: Entity Information (Data, Chart), TP View (Data, Chart), Tax Risk (Chart only).
+  All five routes deep-link. The three chart views render a canvas with Filters and
+  Properties buttons; TP View's chart draws only entities that have related parties.
+- **Entity Information grid**: ID, Entity Name, Incorporation Jurisdiction, Sub-National, Tax
+  Residence, Ownership, Ownership %, Type, Tax Characterization. Entity Name, Incorporation
+  Jurisdiction, Tax Residence and Type sort both ways (`aria-sort` + `?sort=field:dir`); the
+  Ultimate Parent Entity stays pinned first. No pagination at 22–32 entities. Search filters
+  on keystrokes, is case-insensitive, and a no-match search shows
+  "No Entities Yet".
+- **Add Entity wizard**
+  - *Legal*: ID\*, Name\*, Incorporation Jurisdiction\*, Sub-National (disabled until a
+    jurisdiction is chosen), Business Type\* (default Company; UPE is disabled once the chart
+    has one), Business SIC Code\*. Next is disabled until all required fields are filled;
+    whitespace-only ID / Name count as empty.
+  - *Ownership*: "Owned by entities in this chart" (owner + % rows; must total exactly
+    100.00%; each % must be 0.01–100, an out-of-range value is refused and the field keeps
+    its previous value; an owner already chosen is not offered again) or "Owner unknown / not
+    assigned yet". Next is disabled until one of the two is satisfied. Back keeps the Legal
+    data.
+  - *Tax*: Tax Resident Jurisdiction\* (defaults to the incorporation jurisdiction),
+    Financial Year End\* (pre-filled), Tax Characterization list, custom TCT, Save.
+  - A duplicate ID is rejected only on Save: "Entity ID already exists", wizard stays open,
+    nothing is created. (Whether duplicate names are allowed was not tested.)
+  - Special characters and a 250+ character name are stored exactly as typed.
+  - Escape closes the wizard at any step and discards everything (there is no Cancel button).
+- **Edit**: same wizard titled "Edit Entity", pre-filled, with Save available on every step.
+- **Delete**: "Delete Entity — Are you sure you want to delete <name>?" with Cancel / Delete.
+- **Cross-module**: a created entity is offered in the Calendar's entity filter and drawn on
+  the Dashboard heatmap; both stop showing it once it is deleted.
 
 ## Calendar (`/companydata/calendar/`)
 
-**Business purpose**: a compliance-deadline calendar — one real deadline/event per row,
-each tied to a specific entity and jurisdiction, with both a list ("Agenda") and a visual
-month-grid ("Calendar") view, plus the ability to add new custom compliance events.
+**Business purpose**: compliance deadlines per jurisdiction — system deadlines generated for
+the jurisdictions the account has entities in, plus user-created custom events — as a list
+(Agenda) or a month grid (Calendar).
 
-Confirmed live:
+- **Agenda**: Tax Residence, Nature of Compliance, Description, Due Date, Applicable Form.
+  The first three of those that are sortable (Tax Residence, Nature of Compliance, Due Date)
+  sort both ways. Search filters on keystrokes and the Event Type counts follow the search;
+  a no-match search shows "Stay on Top of Compliance Deadlines".
+- **Calendar view**: a month grid starting on the Date Range's first month; the chevrons
+  move one month per click. The page title reads "Agenda" or "Calendar" with the view.
+- **Filters**
+  - Date Range: a rolling window (about one month back to three months ahead), with presets
+    such as "This Year".
+  - Filter By Entity (default "All Entity's Jurisdiction") or Jurisdiction. Under the Entity
+    filter only jurisdictions where the account has an entity are listed; Jurisdiction with
+    nothing selected lists every jurisdiction. **Consequence**: a custom event created for a
+    country with no entity is saved but invisible in the default view.
+  - Event Types chips with live counts; multi-select; the type counts sum to "All", which
+    equals the number of rows.
+  - The Filters panel can be collapsed.
+- **Create New Event > Single Event**: Select Country\*, Nature of Compliance\*, Description,
+  Due Date\* (date picker), External Link. Save is never disabled; each missing required
+  field produces its own message ("Country name is required", "Title is required", "Due date
+  is required"). Cancel discards the form.
+- **Edit** (custom events only): "Edit Event", pre-filled with every saved value.
+- **Delete** (custom events only): "Do you want to delete the event '<title>'? This action
+  is irreversible." with Cancel / Delete.
+- **Accepted without validation** (documented behaviour, each asserted as it really works):
+  past due dates, duplicate titles, long and special-character text. A non-URL External Link
+  is also accepted (observed during exploration; not automated).
+- **Cross-module**: a created event appears in the month grid and in the Dashboard feed, and
+  raises the "All" and "Custom Event" counts by one; all revert on delete.
 
-- **Agenda/Calendar toggle** — a real `reg-toggle-container` with two text labels
-  ("Agenda"/"Calendar") and a sliding active-state indicator. Default view is "Agenda" (a
-  real `<table>`, 7 rows at time of exploration, columns: Tax Residence, Nature of
-  Compliance, Description, Due Date, Applicable Form; sortable, default
-  `?sort=dueDate:asc`). Switching to "Calendar" renders a genuine month-grid (confirmed
-  via a full-page screenshot: Sun–Sat weekday headers, a "<Month> <Year>" heading with
-  prev/next chevrons, and real due-date markers placed on their calendar cells — e.g. a
-  "fsddsf" compliance item correctly placed on its 6 Oct 2026 due date).
-  - **Real gotcha confirmed live**: an unscoped `get_by_text("Calendar", exact=True)`
-    matches the LEFT SIDEBAR nav link before the toggle's own "Calendar" label — the
-    toggle's labels must be scoped inside `.reg-toggle-container`.
-- **Filters panel** — "Date Range" (defaults to a rolling ~4-month forward window from
-  today, e.g. "18-Oct-2026 to 18-Feb-2027" on the day of exploration — a relative window,
-  not a fixed literal date), "Filter By" Entity/Jurisdiction (a radio pair, "Entity"
-  selected by default), and "Event Types" — the same chip-with-live-count pattern as
-  Dashboard's risk chips ("All(7)", "CbC Report (3)", "Custom Event (2)", "CIT Return
-  (2)" on the RC account at time of exploration).
-- **"Create New Event"** opens a real modal (Single Event/Multiple Events tabs) with:
-  Select Country\* (an rsuite combobox, `name="CountryName"`), Nature of Compliance\*
-  (`name="Title"`), Description (`name="Description"`), Due Date\* (`name=
-  "StartDateTime"`, a masked date picker), External Link (`name="ApplicableForm"`).
-  **Confirmed live, a real and important validation gotcha**: `Save` is NOT disabled for
-  an empty form (no disabled-button gate the way Entities' "Next" has one) — submitting
-  an empty form instead shows 3 real inline errors: "Country name is required", "Title is
-  required", "Due date is required", and keeps the modal open. This is the same
-  "validate-on-submit, not via a disabled button" shape as TPA Tools Analyzer's "Create
-  Analysis" modal.
-  **Date-field safety note**: the Due Date field's placeholder format ("Due Date") is a
-  masked-input hint. This project has an already-documented, confirmed-live application
-  crash elsewhere (WTA's Interest and Penalties calculator) from typing a comma-
-  containing literal string into a visually similar masked date field — automation for
-  this field never types into it, matching that established safety precedent.
+## Application defect found
 
-Per this project's production-safety rule, automation only opens/validates/cancels the
-Create New Event modal — it never actually creates a new compliance event in this shared,
-real account.
+**Calendar — a whitespace-only "Nature of Compliance" is accepted.** The field is required,
+but a value consisting only of spaces passes validation and is saved as an event with a
+blank title (the delete dialog then reads "delete the event ''"). Reproduced on RC,
+Staging and Live by `WorkspaceCalendar_24`, which is kept as a failing test until the application is
+fixed; the blank event the test creates is deleted every time. By contrast the Entities
+wizard handles the same input correctly (whitespace-only ID / Name keep Next disabled).
 
-## Test coverage (17 tests)
+## Test coverage (122 tests)
 
-| ID | Module | Category | What it proves |
+| Module | Before | Now | What the new tests add |
 |---|---|---|---|
-| WorkspaceDashboard_01 | Dashboard | Smoke / UI | Risk Heatmap heading + full High/Medium/No Risk legend render |
-| WorkspaceDashboard_02 | Dashboard | Smoke / Data | News feed loads with >0 real cards |
-| WorkspaceDashboard_03 | Dashboard | Regression / State | Feed starts unfiltered (no "Filtered" badge) |
-| WorkspaceDashboard_04 | Dashboard | Functional / Positive | "High" chip adds the "Filtered" badge and narrows the feed (skips, not fails, if the account's real High count is 0 and the chip is disabled) |
-| WorkspaceDashboard_05 | Dashboard | Functional / Data | Searching a live-read entity name leaves >=1 card and every card matches |
-| WorkspaceDashboard_06 | Dashboard | Navigation | Dashboard/Entities/Calendar sidebar links present |
-| WorkspaceEntities_01 | Entities | Smoke / Data | Data grid loads with >0 real rows |
-| WorkspaceEntities_02 | Entities | Smoke / UI | Add Entity wizard opens with ID/Name fields; closed without saving |
-| WorkspaceEntities_03 | Entities | Negative / Validation | Wizard "Next" is genuinely `disabled` with required fields empty |
-| WorkspaceEntities_04 | Entities | Functional / Data | Searching a live-read entity name leaves >=1 row and every row matches |
-| WorkspaceEntities_05 | Entities | Regression / Sorting | "Entity Name" defaults to `aria-sort="ascending"` |
-| WorkspaceEntities_06 | Entities | Navigation | TP View > Data routes to `/transferpricing/data/` and renders a table |
-| WorkspaceCalendar_01 | Calendar | Smoke / Data | Agenda view loads with >0 real rows |
-| WorkspaceCalendar_02 | Calendar | Smoke / UI | Calendar toggle renders a real month grid |
-| WorkspaceCalendar_03 | Calendar | Smoke / UI | Create New Event modal opens with its fields; cancelled without saving |
-| WorkspaceCalendar_04 | Calendar | Negative / Validation | Empty-form Save shows all 3 required-field errors |
-| WorkspaceCalendar_05 | Calendar | Data integrity | Event Types "All(N)" count equals the Agenda row count |
+| Dashboard | 6 | 20 | Risk-count integrity, chip enablement, single-select and reset, per-risk filtering by bar colour, no-match and case-insensitive search, clearing the search, panel collapse, heatmap chart and toolbar, card completeness, feed-vs-Entities integrity, sidebar navigation |
+| Entities | 6 | 56 | Create / persist / count, edit name, edit pre-fill, edit tax characterization, delete cancel / confirm, owned entity, special and long names, search, business type, Calendar and Dashboard linkage; each required field, whitespace, step gating, Sub-National dependency, ownership total and range rules, duplicate owner, Back, cancel at each of the 3 steps, duplicate ID, Tax defaults; sort on all 4 sortable columns, no-match / case-insensitive / partial search, import dialog, Excel export, row menus, TP View grid / menu / related-party dialog, 3 chart views; leftover sweep |
+| Calendar | 5 | 46 | Create / persist, count changes, external link, month grid, edit, edit pre-fill, re-date, delete cancel / confirm, system rows have no actions, Dashboard linkage, search, duplicate titles, past date; each required field, whitespace title (defect), special / long text, Cancel, recovery after errors, Multiple Events tab, tab switching; sort on all 3 sortable columns, single and combined type chips, count integrity, search, empty state, Jurisdiction filter, single jurisdiction, single entity, default date range, "This Year", filter collapse, month navigation, view round trip; leftover sweep |
 
-Per-test steps, preconditions, test data and actual results are written automatically to
-`test_data/Workspace/<Feature>/*.xlsx` on every run (the project's standard format — not
-hand-authored).
+Test IDs: `WorkspaceDashboard_01–20`, `WorkspaceEntities_01–55` and `_99`,
+`WorkspaceCalendar_01–45` and `_99`. Steps, test data, expected and actual results for every
+case are written to `test_data/Workspace/<Feature>/*.xlsx` on each run (the project's
+standard, generated format).
+
+### Test-data safety
+
+- Every record a test creates is named `WorkspaceQA_<tag>_<timestamp>` and deleted in a
+  `finally` block, including when the test fails.
+- `WorkspaceEntities_99` and `WorkspaceCalendar_99` run last, search every jurisdiction for
+  the `WorkspaceQA_` prefix, delete anything found, and fail if anything was there.
+- Pre-existing entities and events are never edited or deleted. Two tests reference an
+  existing entity as an owner / read its ID; neither changes it.
+- Nothing is uploaded through Import Entities or Multiple Events on any environment.
 
 ### Execution results (2026-11-18, final code)
 
-| Environment | Dashboard | Entities | Calendar | Total | Failed / Blocked / Skipped |
-|---|---|---|---|---|---|
-| RC | 6/6 | 6/6 | 5/5 | **17/17** | 0 / 0 / 0 |
-| Staging | 6/6 | 6/6 | 5/5 | **17/17** | 0 / 0 / 0 |
-| Live | 6/6 | 6/6 | 5/5 | **17/17** | 0 / 0 / 0 |
+Each module was run on its own and then all three together, on each environment.
 
-All 17 tests are read-only, so Live ran the full suite with no production-safety exclusions.
+| Environment | Dashboard | Entities | Calendar | Combined | Failed | Blocked | Skipped | Excluded |
+|---|---|---|---|---|---|---|---|---|
+| RC | 20/20 | 56/56 | 45/46 | **121/122** | 1 | 0 | 0 | 0 |
+| Staging | 20/20 | 56/56 | 45/46 | **121/122** | 1 | 0 | 0 | 0 |
+| Live | 20/20 | 56/56 | 45/46 | **121/122** | 1 | 0 | 0 | 0 |
 
-Defects found during the build were all **automation** defects, each fixed at the root
-rather than by loosening an assertion: a bare `goto()` racing the SPA render; two
-`role=heading` locators for elements that are not headings; a too-loose Event Types chip
-regex that matched "All Entity's Jurisdiction"; and two search tests that used `fill()`
-(which never triggers this app's keystroke-driven filter) behind a `<=` check that hid it.
-No application defects were found in the in-scope surface.
+The one failure on each environment is `WorkspaceCalendar_24` (the application defect
+above). No test data was left behind on any environment (both sweeps passed on every run).
 
-An earlier RC attempt was also invalidated by a stale cached session (`.auth/state.json`
-from two days earlier — the documented stale-session gotcha in CLAUDE.md); it was
-discarded, the cache cleared, and every reported result comes from a fresh-session run.
+A first Live run scored 118/122: three Entities tests read the grid count, the Edit wizard and
+the related-party list before Live (noticeably slower) had finished loading them. They were
+fixed with waits on the real content, and Entities alone plus the combined suite were then
+re-run on all three environments to give the figures above.
 
-## Known limitations / explicitly out of scope
+## Not automated, and why
 
-- **TP Documenter** (the 4th real Workspace sidebar item) — confirmed to exist, not
-  automated; not requested for this build.
-- **Entities > Import Entities** — confirmed to exist as a button, the underlying bulk-
-  import flow was not explored or automated (out of requested scope; higher risk to
-  exercise against shared real data).
-- **Entities > Chart views / Tax Risk / TP View / Entity Chart** — their own Data/Chart
-  routes are confirmed real and reachable, and one navigation test (`WorkspaceEntities_06`)
-  confirms TP View's own route switch works, but their full business content was not
-  independently explored/automated beyond that — the Entity Information Data grid is the
-  primary, requested surface.
-- **Role/permission testing** — only the single standard RC/Staging/Live test accounts
-  already used throughout this project were available; no second role/permission level
-  was observed or could be tested. Documented as unverified rather than assumed absent.
-- **Entities' Ownership/Tax wizard steps**, and the "Multiple Events" tab of Create New
-  Event, were observed to exist but their own field sets were not independently explored
-  beyond what the Legal/Single Event steps already cover — same reasoning as above.
+- **TP Documenter** and **entity-chart management** — outside the three requested modules.
+- **Import Entities upload** and **Multiple Events upload** — bulk writes that cannot be
+  cleanly reversed through the UI ("Replace the existing events" would overwrite real data).
+- **Saving related parties in TP View** — would change relationships of pre-existing entities.
+- **Custom Tax Characterization ("Apply Custom TCT")** — appears to add an account-level
+  option; no way to remove one was found, so it was not exercised.
+- **Sub-National values** — the list is empty for the jurisdiction used by the tests; only
+  its enable/disable dependency is asserted.
+- **External Link format** — the app accepts any text; observed, not asserted.
+- **Roles and permissions** — one account per environment was available; no second role
+  could be tested.
+- **Chart contents** — the charts are canvases; presence, controls and entity labels are
+  asserted, not the drawing itself.

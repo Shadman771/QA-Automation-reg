@@ -17,9 +17,14 @@ sub-pages (Full DTA, PE Clause, Other Articles, WHT Rates, MLI Data), both
 with create/rename/delete; Questionnaire Creator - a rich-text
 questionnaire builder with Start Over/Add to Project), and all 6
 **Calculators** dropdown sub-pages). **Workspace** (added most recently)
-covers **Dashboard** (Risk Heatmap + filterable News/Alerts feed),
-**Entities** (the entity data grid + Add Entity wizard), and **Calendar**
-(Agenda/month-grid toggle + Create New Event) - see
+covers **Dashboard** (Risk Heatmap + filterable News/Alerts feed, 20
+tests), **Entities** (data grid, full create/edit/delete through the
+3-step wizard, validation, import/export, TP View and chart views, 56
+tests), and **Calendar** (custom-event create/edit/delete, validation,
+every filter, Agenda and month-grid views, 46 tests) - 122 tests in all.
+Its CRUD tests only touch records they create themselves
+(`WorkspaceQA_<tag>_<timestamp>`) and delete them again, on every
+environment - see
 [Workspace/WORKSPACE_BUSINESS_EXPLORATION.md](Workspace/WORKSPACE_BUSINESS_EXPLORATION.md).
 
 ## Architecture

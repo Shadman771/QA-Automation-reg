@@ -48,6 +48,14 @@ class WorkspaceDashboardPage:
 
         self.news_search = page.locator('input[placeholder="Search"]').first
         self.news_cards = page.locator("div[id^='event-card-']")
+        self.risk_chips = page.locator("button.reg-chip-button-choice")
+        # Each item inside a card carries a coloured left bar: red-800 for a
+        # High-risk entity, green-500 for No Risk (confirmed live).
+        self.card_risk_bars = page.locator("div[id^='event-card-'] div.absolute")
+        self.empty_state = page.get_by_text("No news or updates match your current search or filter.", exact=True)
+        self.collapse_panel_button = page.get_by_role("button", name="Collapse panel")
+        self.heatmap_canvas = page.locator("canvas")
+        self.heatmap_toolbar_buttons = page.locator(".dot-grid-bg button.reg-icon-button")
         self.ask_ai_button = page.get_by_text("Ask AI", exact=True)
 
     def goto(self):
@@ -84,6 +92,45 @@ class WorkspaceDashboardPage:
         """Each feed card's entity name (its `<h6>` title, confirmed via
         HTML dump)."""
         return [t.strip() for t in self.page.locator("div[id^='event-card-'] h6").all_inner_texts()]
+
+    def chip_counts(self) -> dict:
+        """{"All": 15, "High": 10, "Medium": 0, "No Risk": 5} from the live chips."""
+        out = {}
+        for t in self.risk_chips.all_inner_texts():
+            m = re.match(r"^(.*?)\s*\((\d+)\)\s*$", t.strip())
+            if m:
+                out[m.group(1).strip()] = int(m.group(2))
+        return out
+
+    def selected_chip_labels(self) -> list:
+        """The active chip gets a colour-suffixed class
+        (`reg-chip-button-choice-blue|red|yellow|green`) - confirmed live;
+        chips are single-select."""
+        out = []
+        for b in self.risk_chips.all():
+            if re.search(r"reg-chip-button-choice-\w+", b.get_attribute("class") or ""):
+                out.append(re.sub(r"\s*\(\d+\)\s*$", "", b.inner_text().strip()))
+        return out
+
+    def risk_bar_colours(self) -> list:
+        return self.page.evaluate("""() => [...new Set([...document.querySelectorAll(
+            "div[id^='event-card-'] div.absolute")].map(e =>
+            [...e.classList].find(c => c.startsWith('bg-reg-'))).filter(Boolean))]""")
+
+    def clear_news_search(self):
+        """Clears the search with real keystrokes (the feed only reacts to
+        key events, so `fill("")` would leave it filtered)."""
+        self.news_search.click()
+        self.page.keyboard.press("Control+A")
+        self.page.keyboard.press("Backspace")
+
+    def card_flags(self) -> list:
+        """Each card's jurisdiction flag alt text, e.g. "Singapore Flag"."""
+        return self.page.evaluate("""() => [...document.querySelectorAll("div[id^='event-card-']")]
+            .map(c => (c.querySelector('img[alt$="Flag"]') || {}).alt || '')""")
+
+    def body_text(self) -> str:
+        return self.page.evaluate("() => document.body.innerText")
 
     def card_texts(self) -> list:
         return self.page.locator("div[id^='event-card-']").all_inner_texts()

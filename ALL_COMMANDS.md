@@ -168,13 +168,29 @@ flag. To run the Workspace scope in each environment:
 # 2. Clear the cached login so the new environment gets a fresh session:
 rm -f .auth/state.json                     # PowerShell: Remove-Item .auth\state.json
 # 3. Run:
-python run_tests.py --feature Workspace                    # all 3 modules (17 tests)
-python run_tests.py --feature Workspace --smoke            # critical path only (7 tests)
-python run_tests.py --feature Workspace --regression       # regression only (10 tests)
+python run_tests.py --feature Workspace                    # all 3 modules (122 tests, ~17 min headless)
+python run_tests.py --feature Workspacedashboard           # Dashboard only (20 tests)
+python run_tests.py --feature Entities                     # Entities only (56 tests)
+python run_tests.py --feature Calendar                     # Calendar only (46 tests)
+python run_tests.py --feature Workspace --smoke            # critical path only (15 tests)
+python run_tests.py --feature Workspace --regression       # regression only (109 tests)
+
+# One file / one group / one case (several Workspace tests are parametrized, so use pytest -k):
+python -m pytest tests/workspace/entities/test_workspace_entities_crud.py -v
+python -m pytest tests/workspace -k "crud" -v              # every create/edit/delete lifecycle
+python -m pytest tests/workspace -k "workspacecalendar_11" -v
+python -m pytest tests/workspace -k "zz_cleanup" -v        # leftover-test-data sweep only
 ```
 
-All 17 Workspace tests are read-only (modals are opened and cancelled, never saved), so the
-same command is safe on Live with no exclusions. Each run regenerates
+**Workspace test data and safety.** The CRUD tests really create, edit and delete entities and
+calendar events. Each test only touches records it created itself, named
+`WorkspaceQA_<tag>_<timestamp>`, and deletes them in a `finally` block even on failure; the last
+test of the Entities and Calendar modules (`..._99_no_test_..._left_behind`) sweeps every
+jurisdiction for the `WorkspaceQA_` prefix, deletes anything found and fails if anything was
+there. Pre-existing records are never edited or deleted, and nothing is ever uploaded through
+Import Entities or Multiple Events (bulk operations that cannot be undone). The same commands
+run on Live. If a run is killed mid-test, run the `zz_cleanup` command above to remove
+whatever it left. Each run regenerates
 `reports/automation_report.html` (auto-opened at the end; printed as a `file://` link) and
 `test_data/Workspace/<Feature>/*.xlsx`. The report covers only that run, so to keep one per
 environment, copy it before the next run, e.g.
